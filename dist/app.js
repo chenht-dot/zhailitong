@@ -13,6 +13,7 @@ const monthNames=['正月','二月','三月','四月','五月','六月','七月'
 
 function mod(n,m){return ((n%m)+m)%m}
 function digitalRoot(n){while(n>9)n=String(n).split('').reduce((a,b)=>a+Number(b),0);return n}
+function reverseCountFromOne(n){return mod(10-n,9)+1}
 function termDate(year,index){return new Date(31556925974.7*(year-1900)+solarTermInfo[index]*60000+Date.UTC(1900,0,6,2,5))}
 function cnDate(d){return new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(d)}
 function ganzhiYear(year){return stems[mod(year-4,10)]+branches[mod(year-4,12)]}
@@ -20,7 +21,7 @@ function effectiveYear(date){const y=Number(new Intl.DateTimeFormat('en',{timeZo
 function sexagenaryIndex(year){return mod(year-1984,60)}
 function fly(values,reverse=false){const out={};palaces.forEach((p,i)=>out[p]=values[reverse?mod(-i,values.length):mod(i,values.length)]);return out}
 function numberCycle(start){return Array.from({length:9},(_,i)=>mod(start-1+i,9)+1)}
-function annualCenter(year){const s=digitalRoot([...String(year)].reduce((a,b)=>a+Number(b),0));return mod(10-s-1,9)+1}
+function annualCenter(year){const s=digitalRoot([...String(year)].reduce((a,b)=>a+Number(b),0));return reverseCountFromOne(s)}
 function annualPlate(year){return fly(numberCycle(annualCenter(year)))}
 function gridHTML(plate,marks={}){return `<div class="luoshu">${gridOrder.map(p=>{const v=plate[p];const cls=marks[v]||'';return `<div class="palace ${cls}">${v}<small>${p.replace('宫','')} · ${palaceShort[p]}</small></div>`}).join('')}</div>`}
 function yearStemBranch(year){return {stem:stems[mod(year-4,10)],branch:branches[mod(year-4,12)]}}
@@ -38,7 +39,7 @@ const lu={甲:'寅',乙:'卯',丙:'巳',戊:'巳',丁:'午',己:'午',庚:'申',
 const noble={甲:['未','丑'],乙:['申','子'],丙:['酉','亥'],丁:['亥','酉'],戊:['丑','未'],己:['子','申'],庚:['丑','未'],辛:['寅','午'],壬:['卯','巳'],癸:['巳','卯']};
 const wenchang={甲:'巳',乙:'子',丙:'申',丁:'卯',戊:'亥',己:'卯',庚:'亥',辛:'未',壬:'寅',癸:'酉'};
 function groupResult(branch,type){const i=branches.indexOf(branch);const water=[8,0,4],fire=[2,6,10],metal=[5,9,1],wood=[11,3,7];if(type==='horse'){if(water.includes(i))return'寅';if(fire.includes(i))return'申';if(metal.includes(i))return'亥';return'巳'}if(type==='peach'){if(water.includes(i))return'酉';if(fire.includes(i))return'卯';if(wood.includes(i))return'子';return'午'}if(type==='sansha'){if(water.includes(i))return['巳','午','未'];if(fire.includes(i))return['亥','子','丑'];if(metal.includes(i))return['寅','卯','辰'];return['申','酉','戌']}}
-function mingGua(year,gender){const s=digitalRoot([...String(year)].reduce((a,b)=>a+Number(b),0));let n=gender==='male'?mod(10-s-1,9)+1:mod(s+4-1,9)+1;if(n===5)n=gender==='male'?2:8;return {number:n,gua:guaByNumber[n],element:elementByGua[guaByNumber[n]],group:[1,3,4,9].includes(n)?'东四命':'西四命'};}
+function mingGua(year,gender){const s=digitalRoot([...String(year)].reduce((a,b)=>a+Number(b),0));let n=gender==='male'?reverseCountFromOne(s):mod(s+4-1,9)+1;if(n===5)n=gender==='male'?2:8;return {number:n,gua:guaByNumber[n],element:elementByGua[guaByNumber[n]],group:[1,3,4,9].includes(n)?'东四命':'西四命'};}
 
 function personalReport(date,gender){const year=effectiveYear(date),{stem,branch}=yearStemBranch(year),mg=mingGua(year,gender),ss=groupResult(branch,'sansha'),ng=noble[stem];return {year,gz:stem+branch,stem,branch,zodiac:zodiac[branches.indexOf(branch)],ming:mg,nayin:nayin[sexagenaryIndex(year)],sansha:ss,lu:lu[stem],horse:groupResult(branch,'horse'),peach:groupResult(branch,'peach'),yangNoble:ng[0],yinNoble:ng[1],wenchang:wenchang[stem]};}
 
