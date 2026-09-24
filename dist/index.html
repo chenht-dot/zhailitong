@@ -26,9 +26,43 @@
           <p class="lede">输入出生资料生成个人结果，选择年份查看各项通用方位。每项结果均标明计算依据、实际作用与使用条件。</p>
         </div>
         <div class="compass-art" aria-hidden="true">
-          <div class="ring ring-a"></div><div class="ring ring-b"></div><div class="ring ring-c"></div>
-          <span class="dir n">离</span><span class="dir e">兑</span><span class="dir s">坎</span><span class="dir w">震</span>
-          <span class="center-seal">理<br>气</span>
+          <svg class="luopan-icon" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="luopanPaper" cx="50%" cy="42%" r="62%">
+                <stop offset="0" stop-color="#fffdf7"/>
+                <stop offset="1" stop-color="#e8dfcc"/>
+              </radialGradient>
+              <filter id="luopanShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#10232a" flood-opacity=".16"/>
+              </filter>
+            </defs>
+            <g filter="url(#luopanShadow)">
+              <circle cx="160" cy="160" r="147" fill="url(#luopanPaper)" stroke="#b78b3c" stroke-width="2"/>
+              <circle cx="160" cy="160" r="137" fill="none" stroke="#10232a" stroke-width="1.5"/>
+              <polygon points="160,24 256,64 296,160 256,256 160,296 64,256 24,160 64,64" fill="none" stroke="#b78b3c" stroke-width="1.5"/>
+              <polygon points="160,45 241,79 275,160 241,241 160,275 79,241 45,160 79,79" fill="rgba(31,102,92,.06)" stroke="#1f665c" stroke-width="1"/>
+              <g class="compass-rays">
+                <path d="M160 24V78M160 242V296M24 160H78M242 160H296"/>
+                <path d="M63.8 63.8l38.2 38.2M218 218l38.2 38.2M256.2 63.8L218 102M102 218l-38.2 38.2"/>
+              </g>
+              <circle cx="160" cy="160" r="83" fill="#f5f1e6" stroke="#b78b3c" stroke-width="2"/>
+              <circle cx="160" cy="160" r="68" fill="none" stroke="#10232a" stroke-width="8"/>
+              <circle cx="160" cy="160" r="56" fill="#1f665c" stroke="#d7bc78" stroke-width="2"/>
+              <circle cx="160" cy="160" r="45" fill="none" stroke="rgba(255,253,247,.28)"/>
+              <text class="seal-main" x="160" y="157">宅理</text>
+              <text class="seal-sub" x="160" y="181">通</text>
+            </g>
+            <g class="gua-labels">
+              <text x="160" y="51"><tspan class="gua-symbol">☲</tspan><tspan x="160" dy="15">离</tspan></text>
+              <text x="239" y="82"><tspan class="gua-symbol">☷</tspan><tspan x="239" dy="15">坤</tspan></text>
+              <text x="274" y="157"><tspan class="gua-symbol">☱</tspan><tspan x="274" dy="15">兑</tspan></text>
+              <text x="239" y="235"><tspan class="gua-symbol">☰</tspan><tspan x="239" dy="15">乾</tspan></text>
+              <text x="160" y="269"><tspan class="gua-symbol">☵</tspan><tspan x="160" dy="15">坎</tspan></text>
+              <text x="81" y="235"><tspan class="gua-symbol">☶</tspan><tspan x="81" dy="15">艮</tspan></text>
+              <text x="46" y="157"><tspan class="gua-symbol">☳</tspan><tspan x="46" dy="15">震</tspan></text>
+              <text x="81" y="82"><tspan class="gua-symbol">☴</tspan><tspan x="81" dy="15">巽</tspan></text>
+            </g>
+          </svg>
         </div>
       </section>
 
