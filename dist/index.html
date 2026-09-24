@@ -35,6 +35,7 @@
               <filter id="luopanShadow" x="-30%" y="-30%" width="160%" height="160%">
                 <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#10232a" flood-opacity=".16"/>
               </filter>
+              <clipPath id="centerClip"><circle cx="160" cy="160" r="56"/></clipPath>
             </defs>
             <g filter="url(#luopanShadow)">
               <circle cx="160" cy="160" r="147" fill="url(#luopanPaper)" stroke="#b78b3c" stroke-width="2"/>
@@ -47,10 +48,17 @@
               </g>
               <circle cx="160" cy="160" r="83" fill="#f5f1e6" stroke="#b78b3c" stroke-width="2"/>
               <circle cx="160" cy="160" r="68" fill="none" stroke="#10232a" stroke-width="8"/>
-              <circle cx="160" cy="160" r="56" fill="#1f665c" stroke="#d7bc78" stroke-width="2"/>
-              <circle cx="160" cy="160" r="45" fill="none" stroke="rgba(255,253,247,.28)"/>
-              <text class="seal-main" x="160" y="157">宅理</text>
-              <text class="seal-sub" x="160" y="181">通</text>
+              <circle cx="160" cy="160" r="56" fill="#10232a" stroke="#d7bc78" stroke-width="2"/>
+              <g clip-path="url(#centerClip)" class="orbit-mark">
+                <circle cx="190" cy="129" r="62"/>
+                <circle cx="190" cy="129" r="43"/>
+                <circle cx="190" cy="129" r="25"/>
+              </g>
+              <g class="compass-needle">
+                <path d="M160 130l7 30-7 8-7-8z"/>
+                <path d="M160 190l-7-30 7-8 7 8z"/>
+                <circle cx="160" cy="160" r="5"/>
+              </g>
             </g>
             <g class="gua-labels">
               <text x="160" y="51"><tspan class="gua-symbol">☲</tspan><tspan x="160" dy="15">离</tspan></text>
