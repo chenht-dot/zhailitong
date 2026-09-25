@@ -22,8 +22,8 @@
       <section class="intro">
         <div>
           <p class="eyebrow">规则可查 · 过程可核</p>
-          <h1>从个人命卦到年月方位，<br>常用风水计算一站完成。</h1>
-          <p class="lede">输入出生资料生成个人结果，选择年份查看各项通用方位。</p>
+          <h1>从个人命卦到住宅宅盘，<br>常用风水计算一站完成。</h1>
+          <p class="lede">输入出生资料生成个人结果，选择房屋坐向判断宅盘方位与催动时间。</p>
         </div>
         <div class="compass-art" aria-hidden="true">
           <img class="twin-koi-image" src="assets/twin-koi-v2.png" alt="">
@@ -33,6 +33,7 @@
       <nav class="mode-tabs" aria-label="计算类型">
         <button class="mode-tab active" data-mode="personal">个人计算</button>
         <button class="mode-tab" data-mode="general">通用计算</button>
+        <button class="mode-tab" data-mode="residential">住宅计算</button>
       </nav>
 
       <section id="personal" class="mode-panel active" aria-labelledby="personalTitle">
@@ -58,6 +59,39 @@
           </form>
 
           <div class="result-area" id="personalResults" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="residential" class="mode-panel" aria-labelledby="residentialTitle">
+        <div class="workspace-grid residential-grid">
+          <form class="control-card" id="residentialForm">
+            <div class="section-label">住宅资料</div>
+            <h2 id="residentialTitle">排宅盘，判断可催动方位与时间</h2>
+            <label>房屋坐山
+              <select id="sittingMountain" required></select>
+            </label>
+            <div class="facing-preview" id="facingPreview"></div>
+            <label>查询日期
+              <input type="date" id="residentialDate" required>
+            </label>
+            <label>使用者出生日期 <span class="optional">用于个人方位</span>
+              <input type="date" id="residentBirthDate" value="1990-06-15">
+            </label>
+            <label>出生时间 <span class="optional">用于立春交界</span>
+              <input type="time" id="residentBirthTime" value="12:00">
+            </label>
+            <fieldset>
+              <legend>使用者性别</legend>
+              <div class="segmented">
+                <label><input type="radio" name="residentGender" value="male" checked><span>男</span></label>
+                <label><input type="radio" name="residentGender" value="female"><span>女</span></label>
+              </div>
+            </fieldset>
+            <button class="primary" type="submit">生成住宅判断</button>
+            <p class="form-note">坐向按二十四山选择，不要求输入具体度数。个人资料只用于禄马、桃花和个人贵人等方位。</p>
+          </form>
+
+          <div class="result-area" id="residentialResults" aria-live="polite"></div>
         </div>
       </section>
 
