@@ -154,21 +154,23 @@ function houseGridHTML(plate,relations){
 }
 function residentialOpportunities(ctx,personal){
   const ops=[];
+  const yearText=`${ctx.year} · ${ganzhiYear(ctx.year)}年`;
   Object.keys(ctx.relations).filter(p=>p!=='中宫'&&ctx.relations[p]==='财位').forEach(p=>ops.push({type:'wealth',title:'催财',source:'宅盘财位',palace:p,method:'可按现场条件选用鱼缸或合规植物；流年财星只作加分。'}));
   const{stem,branch}=yearStemBranch(ctx.year),wen=annualWenchang[stem],wenPalace=findPalace(placeSequenceInPalaces(branch,branches),wen);
-  if(wenPalace!=='中宫')ops.push({type:'wenchang',title:'流年文昌',source:`${stem}年文昌${wen}`,palace:wenPalace,method:'适合安放书桌、学习或持续脑力工作，也可按文昌规则使用植物。'});
+  if(wenPalace!=='中宫')ops.push({type:'wenchang',title:'流年文昌',source:`${yearText}文昌${wen}`,palace:wenPalace,method:'适合安放书桌、学习或持续脑力工作，也可按文昌规则使用植物。'});
   const fourPalace=findPalace(ctx.annual,4);
-  if(fourPalace!=='中宫')ops.push({type:'wenchang',title:'四绿文昌星',source:'流年九星',palace:fourPalace,method:'作为文昌辅助位置，适合学习与知识工作。'});
+  if(fourPalace!=='中宫')ops.push({type:'wenchang',title:'四绿文昌星',source:`${yearText}流年九星`,palace:fourPalace,method:'作为文昌辅助位置，适合学习与知识工作。'});
   const fame=famePosition(ctx.year);
-  if(fame&&fame[1]!=='中宫')ops.push({type:'fame',title:'利名星',source:`地三奇${fame[0]}与土曲星同宫`,palace:fame[1],method:'适合考试、面试、晋升前的短期工作或学习。'});
-  else ops.push({type:'fame',title:'利名星',source:`${ganzhiYear(ctx.year)}年计算结果`,unavailable:true,method:'土曲星未与地三奇同宫，本年没有可用的利名星方位。'});
-  if(ctx.annualNoble.palace!=='中宫')ops.push({type:'noble',title:`流年${ctx.annualNoble.kind}贵人`,source:`${ctx.annualNoble.year}年天乙贵人`,palace:ctx.annualNoble.palace,method:'适合工作、会客、求助力；只化普通流年凶星。'});
+  if(fame&&fame[1]!=='中宫')ops.push({type:'fame',title:'利名星',source:`${yearText} · 地三奇${fame[0]}与土曲星同宫`,palace:fame[1],method:'适合考试、面试、晋升前的短期工作或学习。'});
+  else ops.push({type:'fame',title:'利名星',source:`${yearText}计算结果`,unavailable:true,method:'土曲星未与地三奇同宫，本年没有可用的利名星方位。'});
+  if(ctx.annualNoble.palace!=='中宫')ops.push({type:'noble',title:`流年${ctx.annualNoble.kind}贵人`,source:`${ctx.annualNoble.year} · ${ganzhiYear(ctx.annualNoble.year)}年天乙贵人`,palace:ctx.annualNoble.palace,method:'适合工作、会客、求助力；只化普通流年凶星。'});
   if(personal){
-    ops.push({type:'lu',title:'禄位',source:'个人出生年天干',palace:branchExactPalace(personal.lu),mountain:personal.lu,method:'适合安放办公桌，提升稳定工作效率。'});
-    ops.push({type:'horse',title:'马位',source:'个人出生年地支',palace:branchExactPalace(personal.horse),mountain:personal.horse,method:'适合销售、业务及外勤人员使用；管理者不宜只凭马位布置。'});
-    ops.push({type:'peach',title:'正桃花',source:'个人出生年地支',palace:branchExactPalace(personal.peach),mountain:personal.peach,method:'只使用正桃花山位，按桃花植物规则催动。'});
+    const birthYearText=`${personal.year} · ${personal.gz}年`;
+    ops.push({type:'lu',title:'禄位',source:`${birthYearText}出生年天干`,palace:branchExactPalace(personal.lu),mountain:personal.lu,method:'适合安放办公桌，提升稳定工作效率。'});
+    ops.push({type:'horse',title:'马位',source:`${birthYearText}出生年地支`,palace:branchExactPalace(personal.horse),mountain:personal.horse,method:'适合销售、业务及外勤人员使用；管理者不宜只凭马位布置。'});
+    ops.push({type:'peach',title:'正桃花',source:`${birthYearText}出生年地支`,palace:branchExactPalace(personal.peach),mountain:personal.peach,method:'只使用正桃花山位，按桃花植物规则催动。'});
     const nn=natalNobleAt(personal,ctx.date);
-    ops.push({type:'natalNoble',title:`个人${nn.kind}贵人`,source:'个人出生年天干',palace:nn.palace,mountain:nn.mountain,method:'适合工作、会客和寻求助力，本身没有化煞能力。'});
+    ops.push({type:'natalNoble',title:`个人${nn.kind}贵人`,source:`${birthYearText}出生年天干`,palace:nn.palace,mountain:nn.mountain,method:'适合工作、会客和寻求助力，本身没有化煞能力。'});
   }
   return ops;
 }
@@ -181,7 +183,7 @@ function activationCard(op,result){
 function renderResidential(input){
   const date=input.date,year=effectiveYear(date),house=housePlate(input.sitting),relations=houseRelations(house),annual=annualPlate(year),month=monthForDate(year,date),annualNoble=annualNobleAt(year,date),yearTigers=activeTigerMountains(year,date),ctx={date,year,house,relations,annual,month,annualNoble,yearTigers};
   const personal=input.birthDate?personalReport(input.birthDate,input.gender):null,ops=residentialOpportunities(ctx,personal),results=ops.map(op=>({op,result:op.unavailable?{status:'本年未形成',level:'unavailable',reasons:['土曲星未与地三奇同宫'],warnings:[],resume:'下一立春后重新计算'}:activationWindow(op,ctx)})),counts={ok:results.filter(x=>x.result.level==='ok').length,paused:results.filter(x=>x.result.level==='paused').length,critical:results.filter(x=>['critical','blocked','unavailable'].includes(x.result.level)).length};
-  document.querySelector('#residentialResults').innerHTML=`<div class="result-block house-summary"><div><div class="section-label">住宅总览</div><h3>${input.sitting}山${oppositeMountain(input.sitting)}向 · ${guaByNumber[house['中宫']]}宅</h3><p>${ganzhiYear(year)}年 · ${month.name}${month.stem}${month.branch}月 · 先看年盘，再看月盘</p></div><div class="summary-counts"><span><b>${counts.ok}</b>可催动</span><span><b>${counts.paused}</b>本月暂停</span><span><b>${counts.critical}</b>禁催/警示</span></div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">生杀五气宅盘</div><h3>坐山卦数 ${house['中宫']} 入中顺飞</h3></div><span class="tag">固定宅盘</span></div>${houseGridHTML(house,relations)}<p class="rule-note">财位以宅盘生气方为主。</p></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">当前催动判断</div><h3>可催动项目一览表</h3></div><span class="tag">${cnDate(date)}</span></div><div class="logic-strip"><span>宅盘定资格</span><i>→</i><span>流年定年度基础</span><i>→</i><span>流月定时间</span></div><div class="activation-list">${results.map(x=>activationCard(x.op,x.result)).join('')}</div><p class="rule-note">流月二黑、三碧、五黄、七赤到达时，所有主动催动暂停；五黄重点警示。天乙贵人只化普通流年二黑、三碧、七赤，不能化五黄、年五虎或禁催同宫组合。停止催动不等于不能正常经过或居住。</p></div>`;
+  document.querySelector('#residentialResults').innerHTML=`<div class="result-block house-summary"><div><div class="section-label">住宅总览</div><h3>${input.sitting}山${oppositeMountain(input.sitting)}向 · ${guaByNumber[house['中宫']]}宅</h3><p>${year} · ${ganzhiYear(year)}年 · ${month.name}${month.stem}${month.branch}月 · 先看年盘，再看月盘</p></div><div class="summary-counts"><span><b>${counts.ok}</b>可催动</span><span><b>${counts.paused}</b>本月暂停</span><span><b>${counts.critical}</b>禁催/警示</span></div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">生杀五气宅盘</div><h3>坐山卦数 ${house['中宫']} 入中顺飞</h3></div><span class="tag">固定宅盘</span></div>${houseGridHTML(house,relations)}<p class="rule-note">财位以宅盘生气方为主。</p></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">当前催动判断</div><h3>可催动项目一览表</h3></div><span class="tag">${cnDate(date)}</span></div><div class="logic-strip"><span>宅盘定资格</span><i>→</i><span>流年定年度基础</span><i>→</i><span>流月定时间</span></div><div class="activation-list">${results.map(x=>activationCard(x.op,x.result)).join('')}</div></div><div class="result-block caution-panel"><div class="section-label">使用说明</div><h3>使用前注意事项</h3><ul><li>财位只以宅盘生气方为基础，流年财星属于加分项。</li><li>流月二黑、三碧、五黄、七赤到达时，所有主动催动暂停；五黄须重点警示，本工具不提供其化解方法。</li><li>天乙贵人只化普通流年二黑、三碧、七赤，不能化解五黄、年五虎或禁催同宫组合。</li><li>五虎按二十四山判断；摆设跨越两个山位时，其中一山犯五虎便不要催动。</li><li>停止催动是指关闭或遮盖鱼缸、移走催动植物，或停止刻意使用该位置，不等于不能正常经过或居住。</li><li>实际布置还要核对缺角、门窗、走道、房间用途等现场条件，计算结果仅供参考。</li></ul></div>`;
   return{year,sitting:input.sitting,facing:oppositeMountain(input.sitting),house,relations,opportunities:results};
 }
 let activeModule='annual';
