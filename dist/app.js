@@ -126,7 +126,7 @@ function residentialAnnualBase(op,ctx){
   return{blocked,level,reasons,warnings,houseNumber,annualStar};
 }
 function residentialMonthBase(op,ctx,month){
-  const plate=fly(numberCycle(month.center)),monthStar=plate[op.palace],houseNumber=ctx.house[op.palace],annualStar=ctx.annual[op.palace],reasons=[],warnings=[];
+  const plate=fly(numberCycle(month.center)),monthStar=plate[op.palace],houseNumber=ctx.house[op.palace],reasons=[],warnings=[];
   const nobleHere=ctx.annualNoble.palace===op.palace;
   let blocked=false,level='paused';
   if(monthStar===5){
@@ -138,9 +138,6 @@ function residentialMonthBase(op,ctx,month){
   }
   if(pairDanger(houseNumber,monthStar)){
     blocked=true;reasons.push(`宅盘 ${houseNumber} 与流月 ${monthStar} 形成禁催同宫组合，天乙贵人不能化解`);
-  }
-  if(pairDanger(annualStar,monthStar)){
-    blocked=true;reasons.push(`流年 ${annualStar} 与流月 ${monthStar} 形成禁催同宫组合，天乙贵人不能化解`);
   }
   const monthTigers=fiveTigerForStartStem(month.stem).map(h=>h.branch);
   if(op.mountain&&monthTigers.includes(op.mountain)){
