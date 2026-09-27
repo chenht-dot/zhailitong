@@ -40,6 +40,66 @@ const annualWenchang={甲:'巳',乙:'子',丙:'申',丁:'卯',戊:'亥',己:'卯
 function groupResult(branch,type){const i=branches.indexOf(branch),water=[8,0,4],fire=[2,6,10],metal=[5,9,1],wood=[11,3,7];if(type==='horse'){if(water.includes(i))return'寅';if(fire.includes(i))return'申';if(metal.includes(i))return'亥';return'巳'}if(type==='peach'){if(water.includes(i))return'酉';if(fire.includes(i))return'卯';if(wood.includes(i))return'子';return'午'}if(type==='sansha'){if(water.includes(i))return['巳','午','未'];if(fire.includes(i))return['亥','子','丑'];if(metal.includes(i))return['寅','卯','辰'];return['申','酉','戌']}}
 function mingGua(year,gender){const s=digitalRoot([...String(year)].reduce((a,b)=>a+Number(b),0));let n=gender==='male'?reverseCountFromOne(s):mod(s+3,9)+1;if(n===5)n=gender==='male'?2:8;return{number:n,gua:guaByNumber[n],element:elementByGua[guaByNumber[n]],group:[1,3,4,9].includes(n)?'东四命':'西四命'}}
 function personalReport(date,gender){const year=effectiveYear(date),{stem,branch}=yearStemBranch(year),mg=mingGua(year,gender),ng=noble[stem],peach=groupResult(branch,'peach');return{year,gz:stem+branch,stem,branch,zodiac:zodiac[branches.indexOf(branch)],ming:mg,nayin:nayin[sexagenaryIndex(year)],sansha:groupResult(branch,'sansha'),lu:lu[stem],horse:groupResult(branch,'horse'),peach,biasedPeach:['子','午','卯','酉'].filter(x=>x!==peach),yangNoble:ng[0],yinNoble:ng[1]}}
+const buildStars=['建','除','满','平','定','执','破','危','成','收','开','闭'];
+const usableBuildStars=new Set(['开','成','平','定','除']);
+const yellowDayBranches=[
+  ['子','丑','巳','午','未','戌'],['寅','卯','午','未','酉','子'],['辰','巳','申','酉','亥','寅'],
+  ['午','未','戌','亥','丑','辰'],['申','酉','子','丑','卯','午'],['戌','亥','寅','卯','巳','申'],
+  ['子','丑','巳','午','未','戌'],['寅','卯','午','未','酉','子'],['辰','巳','申','酉','亥','寅'],
+  ['午','未','戌','亥','丑','辰'],['申','酉','子','丑','卯','午'],['戌','亥','寅','卯','巳','申']
+];
+function oppositeBranch(branch){return branches[mod(branches.indexOf(branch)+6,12)]}
+function dayStemBranch(date){
+  const serial=Math.round((Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate())-Date.UTC(2000,0,7))/86400000),index=mod(serial,60);
+  return{stem:stems[index%10],branch:branches[index%12],index};
+}
+function solarMonthContext(date){const ruleYear=effectiveYear(date),month=monthForDate(ruleYear,date);return{ruleYear,month,index:monthNames.indexOf(month.name)}}
+function buildStarFor(monthBranch,dayBranch){return buildStars[mod(branches.indexOf(dayBranch)-branches.indexOf(monthBranch),12)]}
+function parseBirthDates(text){return[...String(text||'').matchAll(/((?:19|20)\d{2})[-\/](\d{1,2})[-\/](\d{1,2})/g)].map(([,year,month,day])=>new Date(`${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}T12:00:00+08:00`)).filter(d=>!Number.isNaN(d.getTime()))}
+function civilDate(year,monthIndex,day){return new Date(Date.UTC(year,monthIndex,day,4))}
+function dateLabel(date){return new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(date)}
+function monthFiveYellowAtSitting(month,sitting){return fly(numberCycle(month.center))[palaceByMountain[sitting]]===5}
+function auspiciousDateRecord(date,input,principal,otherBranches){
+  const context=solarMonthContext(date),month=context.month,monthOpposite=oppositeBranch(principal.branch);
+  if(month.branch===monthOpposite)return null;
+  const day=dayStemBranch(date),principalOpposite=oppositeBranch(principal.branch);
+  if(day.branch===principalOpposite||otherBranches.some(branch=>day.branch===oppositeBranch(branch)))return null;
+  const buildStar=buildStarFor(month.branch,day.branch);
+  if(!usableBuildStars.has(buildStar))return null;
+  if(input.eventType==='moving'&&monthFiveYellowAtSitting(month,input.sitting))return null;
+  const monthBonuses=[],dayBonuses=[],nobles=noble[principal.stem];
+  if(nobles.includes(month.branch))monthBonuses.push('贵人月');
+  if(month.branch===lu[principal.stem])monthBonuses.push('禄月');
+  if(month.branch===groupResult(principal.branch,'horse'))monthBonuses.push('马月');
+  if(nobles.includes(day.branch))dayBonuses.push('贵人日');
+  if(day.branch===lu[principal.stem])dayBonuses.push('禄日');
+  if(day.branch===groupResult(principal.branch,'horse'))dayBonuses.push('马日');
+  const yellow=yellowDayBranches[context.index].includes(day.branch),score=monthBonuses.length+dayBonuses.length+(yellow?1:0);
+  return{date,day,context,buildStar,monthBonuses,dayBonuses,yellow,score,level:score>=3?'最优':score>=1?'优选':'可用'};
+}
+function selectAuspiciousDates(input){
+  const principal=personalReport(input.birthDate,'male'),otherBranches=(input.otherBirthDates||[]).map(d=>personalReport(d,'male').branch),dates=[];
+  const startMonth=input.scope==='month'?input.month-1:0,endMonth=input.scope==='month'?input.month-1:11;
+  for(let monthIndex=startMonth;monthIndex<=endMonth;monthIndex++){
+    const days=new Date(Date.UTC(input.year,monthIndex+1,0)).getUTCDate();
+    for(let day=1;day<=days;day++){
+      const record=auspiciousDateRecord(civilDate(input.year,monthIndex,day),input,principal,otherBranches);
+      if(record)dates.push(record);
+    }
+  }
+  dates.sort((a,b)=>b.score-a.score||b.dayBonuses.length-a.dayBonuses.length||Number(b.yellow)-Number(a.yellow)||b.monthBonuses.length-a.monthBonuses.length||a.date-b.date);
+  return{principal,otherCount:otherBranches.length,dates};
+}
+function dateSelectionCard(record,rank,input,otherCount){
+  const tags=[...record.monthBonuses,...record.dayBonuses,...(record.yellow?['黄道日']:[]),`${record.buildStar}日`];
+  return`<article class="selection-card level-${record.level}"><div class="selection-rank"><span>${rank}</span><b>${record.level}</b></div><div class="selection-content"><div class="selection-card-head"><div><h4>${dateLabel(record.date)}</h4><p>${record.context.ruleYear} · ${record.context.month.stem}${record.context.month.branch}月 · ${record.day.stem}${record.day.branch}日</p></div><strong>${record.score} 项加分</strong></div><div class="selection-tags">${tags.map(tag=>`<span>${tag}</span>`).join('')}</div><p class="selection-note">已避开主要当事人的对冲月与对冲日${otherCount?`，并避开 ${otherCount} 位重要成员的对冲日`:''}${input.eventType==='moving'?`；月五黄未到${input.sitting}山`:''}。</p></div></article>`;
+}
+function renderDateSelection(input){
+  const result=selectAuspiciousDates(input),scope=input.scope==='year'?`${input.year}年`:`${input.year}年${input.month}月`,best=result.dates.filter(d=>d.level==='最优').length,preferred=result.dates.filter(d=>d.level==='优选').length;
+  if(!result.dates.length){document.querySelector('#dateSelectionResults').innerHTML=`<div class="result-block selection-empty"><div class="section-label">查询结果</div><h3>${scope}没有符合条件的日期</h3><p>可更换月份或年份重新查询。</p></div>`;return result}
+  document.querySelector('#dateSelectionResults').innerHTML=`<div class="result-block selection-summary"><div><div class="section-label">择日结果</div><h3>${scope} · ${input.eventType==='moving'?'搬家':'其他事项'}</h3><p>${result.principal.year} · ${result.principal.gz}年主要当事人${input.eventType==='moving'?` · ${input.sitting}山${oppositeMountain(input.sitting)}向`:''}</p></div><div class="summary-counts"><span><b>${result.dates.length}</b>可用日期</span><span><b>${best}</b>最优</span><span><b>${preferred}</b>优选</span></div></div><div class="result-block"><div class="logic-strip"><span>避开对冲</span><i>→</i><span>筛选开、成、平、定、除</span><i>→</i><span>贵人、禄、马、黄道排序</span></div><div class="selection-list">${result.dates.map((record,index)=>dateSelectionCard(record,index+1,input,result.otherCount)).join('')}</div><p class="rule-note">只显示通过筛选的日期。公历查询范围内，每一天仍按二十四节气确定所属干支月；其他事项不适用于结婚和动土。</p></div>`;
+  return result;
+}
 function statDetail(title,value,summary,detail){return`<details class="stat stat-detail"><summary><small>${title}</small><b>${value}</b><em>${summary}</em><span>查看详情</span></summary><div class="stat-more">${detail}</div></details>`}
 function renderPersonal(data){const cards=[statDetail('命卦',`${data.ming.gua}卦 · ${data.ming.number}`,data.ming.group,'<p>由规则年和性别计算，是个人方位判断的基础。应用到床位、书桌等位置时，还要结合房屋坐山、宅盘与流年。</p>'),statDetail('纳音',data.nayin,'出生年干支','<p>纳音取自出生规则年的干支组合，笔记中主要与一百二十分金配合细看健康影响；需要房屋坐山和分金资料。</p>'),statDetail('人命三煞',data.sansha.join('、')+'山','判断住宅时需结合坐山','<p>对应个人不宜久居的三个山位。它是住宅适配的一项条件，不能脱离宅盘单独判断整宅好坏。</p>'),statDetail('禄位',data.lu+'山','由出生年天干','<p>禄位侧重工作表现与稳定效率，适合各类工作者。实际使用前须避开住宅非位及当年不利飞星。</p>'),statDetail('马位',data.horse+'山','由出生年地支','<p>马位主走动、奔波和业务拓展，较适合销售、外勤等人群；领导者或需要稳定坐镇的人不宜只凭马位安排位置。</p>'),statDetail('桃花位',`正桃花 ${data.peach}山`,`偏桃花 ${data.biasedPeach.join('、')}山`,`<p><b>正桃花：</b>${data.peach}山，侧重正面人缘与合宜关系。</p><p><b>偏桃花：</b>${data.biasedPeach.join('、')}山，是子、午、卯、酉中除正桃花外的三山，可能带来不稳定或不合宜的关系。</p>`),statDetail('阳贵人',data.yangNoble+'山','冬至至夏至用事','<p>阳贵人用于冬至至夏至期间，取助力、人缘与贵人扶持之意。本身不具化煞作用，仍须避开非位和当年凶星。</p>'),statDetail('阴贵人',data.yinNoble+'山','夏至至冬至用事','<p>阴贵人用于夏至至冬至期间，取助力、人缘与贵人扶持之意。个人贵人位每半年切换，实际使用仍要核对宅盘及流年。</p>')];document.querySelector('#personalResults').innerHTML=`<div class="result-block result-hero"><div class="section-label">个人总览</div><h3>${data.gz} · ${data.ming.gua}命</h3><p>规则年 ${data.year} · 属${data.zodiac} · ${data.ming.element}卦 · ${data.ming.group}</p></div><div class="result-block"><div class="detail-hint">点击任一项目，可查看作用、用法与限制。</div><div class="stat-grid">${cards.join('')}</div><p class="rule-note">出生年以立春为界。个人固定方位应用到住宅时，还要与房屋坐山、宅盘、非位及流年吉凶叠加判断。</p></div>`}
 function moduleHeader(title,desc,tag,body){return`<div class="module-title"><div><h3>${title}</h3><p>${desc}</p></div><span class="tag">${tag}</span></div>${body}`}
@@ -200,7 +260,7 @@ function renderResidential(input){
 }
 let activeModule='annual';
 function renderModule(){const year=Number(document.querySelector('#queryYear').value),map={annual:renderAnnual,monthly:y=>renderMonths(y,'monthly'),yearTiger:renderYearTiger,monthTiger:y=>renderMonths(y,'monthTiger'),earth:renderEarth,hidden:renderHidden,noble:renderNoble,wenchang:renderWenchang,fame:renderFame};document.querySelector('#moduleResult').innerHTML=map[activeModule](year)}
-if(typeof globalThis!=='undefined')globalThis.LiqiEngine={effectiveYear,mingGua,personalReport,annualCenter,annualPlate,monthSegments,fiveTigerForStartStem,yearTigerData,housePlate,houseRelations,houseRelation,annualNobleAt,activeTigerMountains,residentialAnnualBase,residentialMonthBase,activationWindow,renderResidential,renderAnnual,renderMonths,renderYearTiger,renderHidden,renderNoble,renderWenchang,renderFame};
+if(typeof globalThis!=='undefined')globalThis.LiqiEngine={effectiveYear,mingGua,personalReport,annualCenter,annualPlate,monthSegments,fiveTigerForStartStem,yearTigerData,housePlate,houseRelations,houseRelation,annualNobleAt,activeTigerMountains,residentialAnnualBase,residentialMonthBase,activationWindow,dayStemBranch,buildStarFor,monthFiveYellowAtSitting,selectAuspiciousDates,renderDateSelection,renderResidential,renderAnnual,renderMonths,renderYearTiger,renderHidden,renderNoble,renderWenchang,renderFame};
 if(typeof document!=='undefined'){
 document.querySelectorAll('.mode-tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.mode-tab').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.mode-panel').forEach(x=>x.classList.toggle('active',x.id===btn.dataset.mode))}));
 document.querySelectorAll('.module-tab').forEach(btn=>btn.addEventListener('click',()=>{activeModule=btn.dataset.module;document.querySelectorAll('.module-tab').forEach(x=>x.classList.toggle('active',x===btn));renderModule()}));
@@ -209,5 +269,9 @@ const mountainSelect=document.querySelector('#sittingMountain');mountainOrder.fo
 const todayParts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),todayValue=`${todayParts.find(x=>x.type==='year').value}-${todayParts.find(x=>x.type==='month').value}-${todayParts.find(x=>x.type==='day').value}`;document.querySelector('#residentialDate').value=todayValue;
 document.querySelector('#residentialForm').addEventListener('submit',e=>{e.preventDefault();const d=document.querySelector('#residentialDate').value,b=document.querySelector('#residentBirthDate').value,bt=document.querySelector('#residentBirthTime').value||'12:00',g=document.querySelector('input[name=residentGender]:checked').value;renderResidential({sitting:mountainSelect.value,date:new Date(`${d}T12:00:00+08:00`),birthDate:b?new Date(`${b}T${bt}:00+08:00`):null,gender:g})});
 const select=document.querySelector('#queryYear'),current=effectiveYear(new Date());for(let y=current-20;y<=current+20;y++){const o=document.createElement('option');o.value=y;o.textContent=`${y} · ${ganzhiYear(y)}年`;o.selected=y===current;select.append(o)}select.addEventListener('change',renderModule);document.querySelector('#todayChip').textContent=`今日 · ${new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',year:'numeric',month:'long',day:'numeric'}).format(new Date())}`;document.querySelector('#personalForm').requestSubmit();document.querySelector('#residentialForm').requestSubmit();setTimeout(()=>document.querySelector('#residentialForm').requestSubmit(),0);renderModule();
+const selectionYear=document.querySelector('#selectionYear'),selectionMonth=document.querySelector('#selectionMonth'),selectionSitting=document.querySelector('#selectionSitting');selectionYear.value=String(new Date().getFullYear());for(let m=1;m<=12;m++){const o=document.createElement('option');o.value=m;o.textContent=`${m}月`;o.selected=m===new Date().getMonth()+1;selectionMonth.append(o)}mountainOrder.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=`${m}山${oppositeMountain(m)}向`;selectionSitting.append(o)});selectionSitting.value='午';
+function syncDateSelectionForm(){const monthly=document.querySelector('input[name=dateScope]:checked').value==='month',moving=document.querySelector('input[name=eventType]:checked').value==='moving';document.querySelector('#selectionMonthLabel').hidden=!monthly;selectionMonth.required=monthly;document.querySelector('#selectionSittingLabel').hidden=!moving;selectionSitting.required=moving}
+document.querySelectorAll('input[name=dateScope],input[name=eventType]').forEach(input=>input.addEventListener('change',syncDateSelectionForm));syncDateSelectionForm();
+document.querySelector('#dateSelectionForm').addEventListener('submit',e=>{e.preventDefault();const birthDate=document.querySelector('#selectionBirthDate').value,birthTime=document.querySelector('#selectionBirthTime').value||'12:00',scope=document.querySelector('input[name=dateScope]:checked').value,eventType=document.querySelector('input[name=eventType]:checked').value;renderDateSelection({scope,eventType,year:Number(selectionYear.value),month:Number(selectionMonth.value),sitting:selectionSitting.value,birthDate:new Date(`${birthDate}T${birthTime}:00+08:00`),otherBirthDates:parseBirthDates(document.querySelector('#selectionOtherBirthDates').value)})});document.querySelector('#dateSelectionForm').requestSubmit();
 if(document.modelContext?.registerTool){const register=tool=>Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{});register({name:'calculate_personal_liqi',title:'计算个人理气',description:'根据出生日期、时间和性别更新页面并返回个人命卦、纳音、三煞、禄马、桃花和贵人。',inputSchema:{type:'object',properties:{birthDate:{type:'string'},birthTime:{type:'string'},gender:{type:'string',enum:['male','female']}},required:['birthDate','gender'],additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute(input){if(!/^\d{4}-\d{2}-\d{2}$/.test(input.birthDate))throw new Error('出生日期格式应为 YYYY-MM-DD');const time=input.birthTime||'12:00',data=personalReport(new Date(`${input.birthDate}T${time}:00+08:00`),input.gender);document.querySelector('#birthDate').value=input.birthDate;document.querySelector('#birthTime').value=time;document.querySelector(`input[name=gender][value=${input.gender}]`).checked=true;renderPersonal(data);return data}});register({name:'show_general_calculation',title:'查看通用计算',description:'按干支年切换并展示一个独立通用计算模块。',inputSchema:{type:'object',properties:{year:{type:'integer',minimum:1901,maximum:2099},module:{type:'string',enum:['annual','monthly','yearTiger','monthTiger','earth','hidden','noble','wenchang','fame']}},required:['year','module'],additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute(input){if(!document.querySelector(`#queryYear option[value="${input.year}"]`)){const o=document.createElement('option');o.value=input.year;o.textContent=`${input.year} · ${ganzhiYear(input.year)}年`;select.append(o)}select.value=String(input.year);activeModule=input.module;document.querySelectorAll('.module-tab').forEach(x=>x.classList.toggle('active',x.dataset.module===activeModule));document.querySelectorAll('.mode-tab').forEach(x=>x.classList.toggle('active',x.dataset.mode==='general'));document.querySelectorAll('.mode-panel').forEach(x=>x.classList.toggle('active',x.id==='general'));renderModule();return{year:input.year,module:input.module,displayed:true}}})}
 }

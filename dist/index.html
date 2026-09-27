@@ -34,6 +34,7 @@
         <button class="mode-tab active" data-mode="personal">个人计算</button>
         <button class="mode-tab" data-mode="general">通用计算</button>
         <button class="mode-tab" data-mode="residential">住宅计算</button>
+        <button class="mode-tab" data-mode="date-selection">简易择日</button>
       </nav>
 
       <section id="personal" class="mode-panel active" aria-labelledby="personalTitle">
@@ -91,6 +92,58 @@
           </form>
 
           <div class="result-area" id="residentialResults" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="date-selection" class="mode-panel" aria-labelledby="dateSelectionTitle">
+        <div class="workspace-grid date-selection-grid">
+          <form class="control-card" id="dateSelectionForm">
+            <div class="section-label">简易择日</div>
+            <h2 id="dateSelectionTitle">筛选可用日期，按条件由优到次排列</h2>
+
+            <fieldset>
+              <legend>查询方式</legend>
+              <div class="segmented">
+                <label><input type="radio" name="dateScope" value="year" checked><span>按年查询</span></label>
+                <label><input type="radio" name="dateScope" value="month"><span>按月查询</span></label>
+              </div>
+            </fieldset>
+
+            <label>查询年份
+              <input type="number" id="selectionYear" min="1901" max="2099" required>
+            </label>
+            <label id="selectionMonthLabel" hidden>查询月份
+              <select id="selectionMonth"></select>
+            </label>
+
+            <fieldset>
+              <legend>事项</legend>
+              <div class="segmented">
+                <label><input type="radio" name="eventType" value="moving" checked><span>搬家</span></label>
+                <label><input type="radio" name="eventType" value="other"><span>其他事项</span></label>
+              </div>
+            </fieldset>
+
+            <label>主要当事人出生日期
+              <input type="date" id="selectionBirthDate" value="1990-06-15" required>
+            </label>
+            <label>出生时间 <span class="optional">用于立春交界判断</span>
+              <input type="time" id="selectionBirthTime" value="12:00">
+            </label>
+
+            <label id="selectionSittingLabel">房屋坐山
+              <select id="selectionSitting" required></select>
+            </label>
+
+            <label>其他重要成员出生日期 <span class="optional">选填</span>
+              <textarea id="selectionOtherBirthDates" rows="3" placeholder="可填写多个日期，例如：1992-03-08、2015-09-20"></textarea>
+            </label>
+
+            <button class="primary" type="submit">查询可用日期</button>
+            <p class="form-note">只显示通过筛选的日期。其他事项不适用于结婚和动土；月份规则按二十四节气划分。</p>
+          </form>
+
+          <div class="result-area" id="dateSelectionResults" aria-live="polite"></div>
         </div>
       </section>
 
