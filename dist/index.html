@@ -34,6 +34,7 @@
         <button class="mode-tab active" data-mode="personal">个人计算</button>
         <button class="mode-tab" data-mode="general">通用计算</button>
         <button class="mode-tab" data-mode="residential">住宅计算</button>
+        <button class="mode-tab" data-mode="bed-placement">安床助手</button>
         <button class="mode-tab" data-mode="date-selection">简易择日</button>
       </nav>
 
@@ -92,6 +93,57 @@
           </form>
 
           <div class="result-area" id="residentialResults" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="bed-placement" class="mode-panel" aria-labelledby="bedPlacementTitle">
+        <div class="workspace-grid bed-placement-grid">
+          <form class="control-card" id="bedPlacementForm">
+            <div class="section-label">安床助手</div>
+            <h2 id="bedPlacementTitle">按使用者情况选择安床方法</h2>
+
+            <fieldset>
+              <legend>安床方法</legend>
+              <div class="method-picker" role="tablist" aria-label="安床方法">
+                <button type="button" class="bed-method-button active" data-bed-method="eight-house" aria-selected="true"><b>八宅安床</b><small>适用于单身人士</small></button>
+                <button type="button" class="bed-method-button" data-bed-method="eight-door" aria-selected="false"><b>八门安床</b><small>适用于单身人士</small></button>
+                <button type="button" class="bed-method-button" data-bed-method="nine-star" aria-selected="false"><b>九星安床</b><small>适用于已婚夫妇</small></button>
+              </div>
+            </fieldset>
+
+            <div id="eightHouseFields" class="bed-method-fields">
+              <label>出生日期
+                <input type="date" id="bedBirthDate" value="1990-06-15">
+              </label>
+              <label>出生时间 <span class="optional">用于立春交界判断</span>
+                <input type="time" id="bedBirthTime" value="12:00">
+              </label>
+              <fieldset>
+                <legend>性别</legend>
+                <div class="segmented">
+                  <label><input type="radio" name="bedGender" value="male" checked><span>男</span></label>
+                  <label><input type="radio" name="bedGender" value="female"><span>女</span></label>
+                </div>
+              </fieldset>
+            </div>
+
+            <div id="eightDoorFields" class="bed-method-fields" hidden>
+              <label>卧室坐山
+                <select id="bedRoomSitting"></select>
+              </label>
+            </div>
+
+            <div id="nineStarFields" class="bed-method-fields" hidden>
+              <label>卧室门所在宫位
+                <select id="bedDoorPalace"></select>
+              </label>
+            </div>
+
+            <button class="primary" type="submit">生成安床建议</button>
+            <p class="form-note" id="bedMethodNote">根据命卦列出符合“坐煞向生”的四个床坐向。</p>
+          </form>
+
+          <div class="result-area" id="bedPlacementResults" aria-live="polite"></div>
         </div>
       </section>
 

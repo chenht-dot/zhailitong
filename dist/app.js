@@ -258,11 +258,100 @@ function renderResidential(input){
   document.querySelector('#residentialResults').innerHTML=`<div class="result-block house-summary"><div><div class="section-label">住宅总览</div><h3>${input.sitting}山${oppositeMountain(input.sitting)}向 · ${guaByNumber[house['中宫']]}宅</h3><p>${year} · ${ganzhiYear(year)}年 · ${month.name}${month.stem}${month.branch}月</p></div><div class="summary-counts"><span><b>${counts.ok}</b>可催动</span><span><b>${counts.paused}</b>本月暂停</span><span><b>${counts.critical}</b>禁催/警示</span></div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">生杀五气宅盘</div><h3>坐山卦数 ${house['中宫']} 入中顺飞</h3></div><span class="tag">固定宅盘</span></div>${houseGridHTML(house,relations)}<p class="rule-note">宅盘中的生气方即为屋宅固定财位。</p></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">当前催动判断</div><h3>可催动项目一览表</h3></div><span class="tag">${cnDate(date)}</span></div><div class="logic-strip"><span>宅盘定资格</span><i>→</i><span>流年定年度基础</span><i>→</i><span>流月定时间</span></div><div class="activation-list">${results.map(x=>activationCard(x.op,x.result)).join('')}</div></div><div class="result-block caution-panel"><div class="section-label">使用说明</div><h3>使用前注意事项</h3><ul><li>诸君，房屋的坐向只能用罗盘进行测量，万不可用指南针、手机罗盘进行测量。</li><li>未学习过相关知识的人不建议擅自进行催动，否则可能出现负面效果。</li><li>趋吉必先避凶，房屋若有缺陷未解决，则催吉无效。</li><li>天乙贵人不可化解五虎、五黄、外局冲煞及布局缺陷。</li><li>停止催动是指关闭或遮盖鱼缸、移走催动植物，或停止刻意使用该位置，不等于不能正常经过。</li><li>实际布置还要核对缺角、门窗、走道、房间用途等现场条件，计算结果仅供参考。</li></ul></div>`;
   return{year,sitting:input.sitting,facing:oppositeMountain(input.sitting),house,relations,opportunities:results};
 }
+
+const bedGuaInfo={
+  坎:{number:1,direction:'正北',yinYang:'阳',element:'水',opposite:'离'},
+  坤:{number:2,direction:'西南',yinYang:'阴',element:'土',opposite:'艮'},
+  震:{number:3,direction:'正东',yinYang:'阳',element:'木',opposite:'兑'},
+  巽:{number:4,direction:'东南',yinYang:'阴',element:'木',opposite:'乾'},
+  乾:{number:6,direction:'西北',yinYang:'阳',element:'金',opposite:'巽'},
+  兑:{number:7,direction:'正西',yinYang:'阴',element:'金',opposite:'震'},
+  艮:{number:8,direction:'东北',yinYang:'阳',element:'土',opposite:'坤'},
+  离:{number:9,direction:'正南',yinYang:'阴',element:'火',opposite:'坎'}
+};
+const bedGuaGrid=['巽','离','坤','震','中','兑','艮','坎','乾'];
+const eightDoorOrder=['休','生','伤','杜','景','死','惊','开'];
+const eightDoorGood=new Set(['休','生','开']);
+const baguaClockwise=['离','坤','兑','乾','坎','艮','震','巽'];
+const eightDoorStart={乾:'艮',坎:'震',艮:'巽',震:'离',巽:'震',离:'乾',坤:'坤',兑:'兑'};
+const bedStarYinYang={1:'阳',2:'阴',3:'阳',4:'阴',5:'阳',6:'阳',7:'阴',8:'阳',9:'阴'};
+const bedStarGua={1:'坎',2:'坤',3:'震',4:'巽',5:'五',6:'乾',7:'兑',8:'艮',9:'离'};
+
+function bedDirectionGrid(content,center){
+  return`<div class="bed-direction-grid">${bedGuaGrid.map(g=>g==='中'?`<div class="bed-direction-center"><small>中宫</small><b>${center}</b></div>`:content(g)).join('')}</div>`;
+}
+function calculateEightHouse(date,gender){
+  const year=effectiveYear(date),ming=mingGua(year,gender),candidates=ming.group==='东四命'?['乾','兑','艮','坤']:['坎','震','巽','离'];
+  return{year,ming,candidates};
+}
+function renderEightHouse(input){
+  const result=calculateEightHouse(input.birthDate,input.gender),candidateSet=new Set(result.candidates);
+  const grid=bedDirectionGrid(g=>{const info=bedGuaInfo[g],active=candidateSet.has(g);return`<div class="bed-direction-cell ${active?'recommended':''}"><small>${info.direction}</small><b>${g}</b><span>${active?'床头可坐':'不取'}</span></div>`},`${result.ming.gua}命`);
+  const cards=result.candidates.map(g=>{const info=bedGuaInfo[g],facing=bedGuaInfo[info.opposite];return`<article class="bed-option-card"><span class="bed-option-badge">并列可用</span><small>床头坐山</small><h4>坐${g}向${info.opposite}</h4><p>床头在${info.direction}，床尾朝${facing.direction}</p></article>`}).join('');
+  document.querySelector('#bedPlacementResults').innerHTML=`<div class="result-block bed-summary"><div><div class="section-label">八宅安床</div><h3>${result.year}年 · ${result.ming.gua}命</h3><p>${result.ming.group} · 按“坐煞向生，背凶迎吉”取床坐向</p></div><div class="bed-audience">单身人士</div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">方位结果</div><h3>四个坐向并列可用</h3></div><span class="tag">${result.ming.group==='东四命'?'床坐西四卦':'床坐东四卦'}</span></div>${grid}<div class="bed-option-list">${cards}</div><p class="rule-note">“坐”指床的坐山方位，非床头朝向。</p></div><div class="result-block caution-panel"><div class="section-label">摆放提示</div><h3>现场仍需避开明显冲煞</h3><ul><li>先从四个可用坐向中选择卧室能够实际摆放的方向。</li><li>床头应有可靠依托，并结合门窗、走道和房间形状判断。</li><li>八宅安床仅做参考，且只适用于单身人士。</li></ul></div>`;
+  return result;
+}
+function calculateEightDoor(sitting){
+  const start=eightDoorStart[sitting],startIndex=baguaClockwise.indexOf(start),doors={};
+  eightDoorOrder.forEach((door,index)=>doors[baguaClockwise[mod(startIndex+index,8)]]=door);
+  return{sitting,start,doors,candidates:Object.entries(doors).filter(([,door])=>eightDoorGood.has(door)).map(([gua,door])=>({gua,door}))};
+}
+function renderEightDoor(sitting){
+  const result=calculateEightDoor(sitting),grid=bedDirectionGrid(g=>{const info=bedGuaInfo[g],door=result.doors[g],active=eightDoorGood.has(door);return`<div class="bed-direction-cell ${active?'recommended':''}"><small>${info.direction} · ${g}宫</small><b>${door}门</b><span>${active?'吉门床位':'本法不取'}</span></div>`},`${sitting}山`);
+  const cards=result.candidates.map(({gua,door})=>`<article class="bed-option-card"><span class="bed-option-badge">${door}门</span><small>床头中心点</small><h4>${gua}宫 · ${bedGuaInfo[gua].direction}</h4><p>将床头中心点放入该宫位范围</p></article>`).join('');
+  document.querySelector('#bedPlacementResults').innerHTML=`<div class="result-block bed-summary"><div><div class="section-label">八门安床</div><h3>${sitting}山卧室 · ${result.start}宫起休门</h3><p>依次顺排休、生、伤、杜、景、死、惊、开</p></div><div class="bed-audience">单身人士</div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">八门加临</div><h3>只取开、休、生三吉门</h3></div><span class="tag">顺行八宫</span></div>${grid}<div class="bed-option-list">${cards}</div><p class="rule-note">这里判断床头中心点落在卧室的哪个宫位，不是判断床头朝向。</p></div><div class="result-block caution-panel"><div class="section-label">摆放提示</div><h3>两害相权取其轻</h3><ul><li>吉门位置若犯门冲、背门或背窗，应先尝试调整和化解。</li><li>现场问题严重且无法处理时，应放弃该吉门位置。</li><li>八门安床的作用仅为改善睡眠，不应过分依赖。</li></ul></div>`;
+  return result;
+}
+function relationCopy(aName,aElement,bName,bElement){
+  if(aElement===bElement)return`${aName}与${bName}比助`;
+  if(generates[aElement]===bElement)return`${aName}生${bName}`;
+  if(generates[bElement]===aElement)return`${bName}生${aName}`;
+  if(controls[aElement]===bElement)return`${aName}克${bName}`;
+  return`${bName}克${aName}`;
+}
+function nineStarPriority(bed,star,palace){
+  const sameBedStar=bed.element===star.element,starGeneratesBed=generates[star.element]===bed.element,bedGeneratesStar=generates[bed.element]===star.element;
+  const samePalaceStar=palace.element===star.element,palaceGeneratesStar=generates[palace.element]===star.element,starControlsPalace=controls[star.element]===palace.element;
+  if(bed.yinYang==='阳'){
+    if((starGeneratesBed||sameBedStar)&&(palaceGeneratesStar||samePalaceStar))return{tier:4,label:'首选',rule:'门星生床卦或比助，同时门卦生门星或比助'};
+    if(sameBedStar&&starControlsPalace)return{tier:3,label:'次选',rule:'门星与床卦比助，同时门星克门卦'};
+    if(starGeneratesBed&&starControlsPalace)return{tier:2,label:'第三优先',rule:'门星生床卦，同时门星克门卦'};
+  }else{
+    const allSame=sameBedStar&&samePalaceStar;
+    if((bedGeneratesStar&&(palaceGeneratesStar||samePalaceStar))||allSame)return{tier:4,label:'首选',rule:'床卦与门卦共同生门星'};
+    if(bedGeneratesStar&&starControlsPalace)return{tier:3,label:'次选',rule:'床卦生门星，同时门星克门卦'};
+  }
+  return{tier:1,label:'阴阳相配',rule:'通过阴阳配'};
+}
+function calculateNineStarBeds(doorPalace){
+  const palaceGua=guaByNumber[palaceNumber[doorPalace]],palace={gua:palaceGua,element:elementByGua[palaceGua]},candidates=Object.entries(bedGuaInfo).map(([gua,bed])=>{
+    const plate=fly(numberCycle(bed.number)),number=plate[doorPalace],star={number,gua:bedStarGua[number],yinYang:bedStarYinYang[number],element:numberElement[number]},matched=bed.yinYang!==star.yinYang;
+    const relations=[relationCopy('床卦',bed.element,'门星',star.element),relationCopy('门星',star.element,'门卦',palace.element)];
+    const priority=matched?nineStarPriority(bed,star,palace):{tier:0,label:'阴阳不配',rule:'床卦与门星同阴或同阳，本法不取'};
+    return{gua,bed,plate,star,matched,relations,priority,roles:bed.yinYang==='阳'?'床为夫 · 门星为妻':'门星为夫 · 床为妻'};
+  }).sort((a,b)=>b.priority.tier-a.priority.tier||a.bed.number-b.bed.number);
+  return{doorPalace,palace,candidates,matched:candidates.filter(x=>x.matched)};
+}
+function nineStarBedCard(item){
+  const className=item.priority.tier>=4?'best':item.priority.tier>=2?'preferred':item.priority.tier===1?'matched':'excluded';
+  return`<article class="nine-star-bed-card ${className}"><div class="nine-star-card-head"><div><small>床坐${item.gua} · ${item.bed.direction}</small><h4>坐${item.gua}向${item.bed.opposite}</h4><p>${item.roles}</p></div><span>${item.priority.label}</span></div><div class="nine-star-facts"><span><small>床卦</small><b>${item.gua} · ${item.bed.yinYang}${item.bed.element}</b></span><span><small>门星</small><b>${item.star.number} · ${item.star.yinYang}${item.star.element}</b></span></div><p class="nine-star-relations">${item.relations.join('；')}</p><p class="nine-star-rule">${item.priority.rule}</p></article>`;
+}
+function renderNineStarBeds(doorPalace){
+  const result=calculateNineStarBeds(doorPalace),recommended=result.candidates.filter(x=>x.matched),excluded=result.candidates.filter(x=>!x.matched),top=recommended.filter(x=>x.priority.tier>=2).length;
+  document.querySelector('#bedPlacementResults').innerHTML=`<div class="result-block bed-summary"><div><div class="section-label">九星安床</div><h3>卧室门在${doorPalace} · ${palaceShort[doorPalace]}</h3><p>逐一计算八种床坐向，以床卦数入中顺飞并读取门星</p></div><div class="bed-audience">已婚夫妇</div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">排序结果</div><h3>${recommended.length}个坐向通过阴阳配</h3></div><span class="tag">${top}个优先组合</span></div><div class="nine-star-bed-list">${recommended.map(nineStarBedCard).join('')}</div><details class="excluded-bed-list"><summary>查看${excluded.length}个阴阳不配坐向</summary><div class="nine-star-bed-list">${excluded.map(nineStarBedCard).join('')}</div></details></div><div class="result-block caution-panel"><div class="section-label">测量方法</div><h3>从卧室中心确定床坐向</h3><ul><li>人站在卧室正中心，面对床尾、背对床头下罗盘。</li><li>无论床放在卧室哪里，测量点始终是卧室中心。</li><li>若推荐位置与门冲、背门、背窗等现场问题冲突，应尽量处理；无法处理时须明确知悉相应影响。</li></ul></div>`;
+  return result;
+}
+function renderBedPlacement(input){
+  if(input.method==='eight-house')return renderEightHouse(input);
+  if(input.method==='eight-door')return renderEightDoor(input.roomSitting);
+  return renderNineStarBeds(input.doorPalace);
+}
 let activeModule='annual';
 function renderModule(){const year=Number(document.querySelector('#queryYear').value),map={annual:renderAnnual,monthly:y=>renderMonths(y,'monthly'),yearTiger:renderYearTiger,monthTiger:y=>renderMonths(y,'monthTiger'),earth:renderEarth,hidden:renderHidden,noble:renderNoble,wenchang:renderWenchang,fame:renderFame};document.querySelector('#moduleResult').innerHTML=map[activeModule](year)}
-if(typeof globalThis!=='undefined')globalThis.LiqiEngine={effectiveYear,mingGua,personalReport,annualCenter,annualPlate,monthSegments,fiveTigerForStartStem,yearTigerData,housePlate,houseRelations,houseRelation,annualNobleAt,activeTigerMountains,residentialAnnualBase,residentialMonthBase,activationWindow,dayStemBranch,buildStarFor,monthFiveYellowAtSitting,selectAuspiciousDates,renderDateSelection,renderResidential,renderAnnual,renderMonths,renderYearTiger,renderHidden,renderNoble,renderWenchang,renderFame};
+if(typeof globalThis!=='undefined')globalThis.LiqiEngine={effectiveYear,mingGua,personalReport,annualCenter,annualPlate,monthSegments,fiveTigerForStartStem,yearTigerData,housePlate,houseRelations,houseRelation,annualNobleAt,activeTigerMountains,residentialAnnualBase,residentialMonthBase,activationWindow,dayStemBranch,buildStarFor,monthFiveYellowAtSitting,selectAuspiciousDates,calculateEightHouse,calculateEightDoor,calculateNineStarBeds,renderBedPlacement,renderDateSelection,renderResidential,renderAnnual,renderMonths,renderYearTiger,renderHidden,renderNoble,renderWenchang,renderFame};
 if(typeof document!=='undefined'){
-document.querySelectorAll('.mode-tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.mode-tab').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.mode-panel').forEach(x=>x.classList.toggle('active',x.id===btn.dataset.mode))}));
+function showMode(mode,updateHash=true){document.querySelectorAll('.mode-tab').forEach(x=>x.classList.toggle('active',x.dataset.mode===mode));document.querySelectorAll('.mode-panel').forEach(x=>x.classList.toggle('active',x.id===mode));if(updateHash&&history.replaceState)history.replaceState(null,'',`#${mode}`)}
+document.querySelectorAll('.mode-tab').forEach(btn=>btn.addEventListener('click',()=>showMode(btn.dataset.mode)));
 document.querySelectorAll('.module-tab').forEach(btn=>btn.addEventListener('click',()=>{activeModule=btn.dataset.module;document.querySelectorAll('.module-tab').forEach(x=>x.classList.toggle('active',x===btn));renderModule()}));
 document.querySelector('#personalForm').addEventListener('submit',e=>{e.preventDefault();const d=document.querySelector('#birthDate').value,t=document.querySelector('#birthTime').value||'12:00',g=document.querySelector('input[name=gender]:checked').value;renderPersonal(personalReport(new Date(`${d}T${t}:00+08:00`),g))});
 const mountainSelect=document.querySelector('#sittingMountain');mountainOrder.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=`${m}山${oppositeMountain(m)}向`;mountainSelect.append(o)});mountainSelect.value='午';
@@ -273,5 +362,13 @@ const selectionYear=document.querySelector('#selectionYear'),selectionMonth=docu
 function syncDateSelectionForm(){const monthly=document.querySelector('input[name=dateScope]:checked').value==='month',moving=document.querySelector('input[name=eventType]:checked').value==='moving';document.querySelector('#selectionMonthLabel').hidden=!monthly;selectionMonth.required=monthly;document.querySelector('#selectionSittingLabel').hidden=!moving;selectionSitting.required=moving}
 document.querySelectorAll('input[name=dateScope],input[name=eventType]').forEach(input=>input.addEventListener('change',syncDateSelectionForm));syncDateSelectionForm();
 document.querySelector('#dateSelectionForm').addEventListener('submit',e=>{e.preventDefault();const birthDate=document.querySelector('#selectionBirthDate').value,birthTime=document.querySelector('#selectionBirthTime').value||'12:00',scope=document.querySelector('input[name=dateScope]:checked').value,eventType=document.querySelector('input[name=eventType]:checked').value;renderDateSelection({scope,eventType,year:Number(selectionYear.value),month:Number(selectionMonth.value),sitting:selectionSitting.value,birthDate:new Date(`${birthDate}T${birthTime}:00+08:00`),otherBirthDates:parseBirthDates(document.querySelector('#selectionOtherBirthDates').value)})});document.querySelector('#dateSelectionForm').requestSubmit();
+const bedRoomSitting=document.querySelector('#bedRoomSitting'),bedDoorPalace=document.querySelector('#bedDoorPalace');
+Object.keys(bedGuaInfo).forEach(g=>{const option=document.createElement('option');option.value=g;option.textContent=`${g}山${bedGuaInfo[g].opposite}向 · ${bedGuaInfo[g].direction}`;bedRoomSitting.append(option)});bedRoomSitting.value='震';
+bedGuaGrid.filter(g=>g!=='中').forEach(g=>{const palace=`${g}宫`,option=document.createElement('option');option.value=palace;option.textContent=`${palace} · ${bedGuaInfo[g].direction}`;bedDoorPalace.append(option)});bedDoorPalace.value='巽宫';
+let activeBedMethod='eight-house';
+function syncBedPlacementForm(){const method=activeBedMethod;document.querySelector('#eightHouseFields').hidden=method!=='eight-house';document.querySelector('#eightDoorFields').hidden=method!=='eight-door';document.querySelector('#nineStarFields').hidden=method!=='nine-star';document.querySelector('#bedMethodNote').textContent={"eight-house":'根据命卦列出符合“坐煞向生”的四个床坐向。',"eight-door":'按卧室坐山起休门，顺行八宫并找出开、休、生三吉门。',"nine-star":'根据卧室门宫位遍历八种床坐向，检查阴阳配并按五行关系排序。'}[method]}
+document.querySelectorAll('.bed-method-button').forEach(button=>button.addEventListener('click',()=>{activeBedMethod=button.dataset.bedMethod;document.querySelectorAll('.bed-method-button').forEach(item=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-selected',String(active))});syncBedPlacementForm();document.querySelector('#bedPlacementForm').requestSubmit()}));syncBedPlacementForm();
+document.querySelector('#bedPlacementForm').addEventListener('submit',e=>{e.preventDefault();const method=activeBedMethod,birthDate=document.querySelector('#bedBirthDate').value,birthTime=document.querySelector('#bedBirthTime').value||'12:00',gender=document.querySelector('input[name=bedGender]:checked').value;renderBedPlacement({method,birthDate:new Date(`${birthDate}T${birthTime}:00+08:00`),gender,roomSitting:bedRoomSitting.value,doorPalace:bedDoorPalace.value})});document.querySelector('#bedPlacementForm').requestSubmit();
+const requestedMode=location.hash.slice(1);if(document.getElementById(requestedMode)?.classList.contains('mode-panel'))showMode(requestedMode,false);
 if(document.modelContext?.registerTool){const register=tool=>Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{});register({name:'calculate_personal_liqi',title:'计算个人理气',description:'根据出生日期、时间和性别更新页面并返回个人命卦、纳音、三煞、禄马、桃花和贵人。',inputSchema:{type:'object',properties:{birthDate:{type:'string'},birthTime:{type:'string'},gender:{type:'string',enum:['male','female']}},required:['birthDate','gender'],additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute(input){if(!/^\d{4}-\d{2}-\d{2}$/.test(input.birthDate))throw new Error('出生日期格式应为 YYYY-MM-DD');const time=input.birthTime||'12:00',data=personalReport(new Date(`${input.birthDate}T${time}:00+08:00`),input.gender);document.querySelector('#birthDate').value=input.birthDate;document.querySelector('#birthTime').value=time;document.querySelector(`input[name=gender][value=${input.gender}]`).checked=true;renderPersonal(data);return data}});register({name:'show_general_calculation',title:'查看通用计算',description:'按干支年切换并展示一个独立通用计算模块。',inputSchema:{type:'object',properties:{year:{type:'integer',minimum:1901,maximum:2099},module:{type:'string',enum:['annual','monthly','yearTiger','monthTiger','earth','hidden','noble','wenchang','fame']}},required:['year','module'],additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute(input){if(!document.querySelector(`#queryYear option[value="${input.year}"]`)){const o=document.createElement('option');o.value=input.year;o.textContent=`${input.year} · ${ganzhiYear(input.year)}年`;select.append(o)}select.value=String(input.year);activeModule=input.module;document.querySelectorAll('.module-tab').forEach(x=>x.classList.toggle('active',x.dataset.module===activeModule));document.querySelectorAll('.mode-tab').forEach(x=>x.classList.toggle('active',x.dataset.mode==='general'));document.querySelectorAll('.mode-panel').forEach(x=>x.classList.toggle('active',x.id==='general'));renderModule();return{year:input.year,module:input.module,displayed:true}}})}
 }
