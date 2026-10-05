@@ -13,7 +13,14 @@ const monthNames=['正月','二月','三月','四月','五月','六月','七月'
 function mod(n,m){return((n%m)+m)%m}
 function digitalRoot(n){while(n>9)n=String(n).split('').reduce((a,b)=>a+Number(b),0);return n}
 function reverseCountFromOne(n){return mod(10-n,9)+1}
-function termDate(year,index){return new Date(31556925974.7*(year-1900)+solarTermInfo[index]*60000+Date.UTC(1900,0,6,2,5))}
+function termDate(year,index){
+  const packed=globalThis.BEIJING_SOLAR_TERMS?.[year]?.[index];
+  if(packed){
+    const month=packed.slice(0,2),day=packed.slice(2,4),hour=packed.slice(4,6),minute=packed.slice(6,8),second=packed.slice(8,10);
+    return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}+08:00`);
+  }
+  return new Date(31556925974.7*(year-1900)+solarTermInfo[index]*60000+Date.UTC(1900,0,6,2,5));
+}
 function cnDate(d){return new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(d)}
 function ganzhiYear(year){return stems[mod(year-4,10)]+branches[mod(year-4,12)]}
 function effectiveYear(date){const y=Number(new Intl.DateTimeFormat('en',{timeZone:'Asia/Shanghai',year:'numeric'}).format(date));return date<termDate(y,2)?y-1:y}
@@ -33,6 +40,12 @@ function fiveTigerForStartStem(startStem){const start=stems.indexOf(startStem),m
 function branchPalace(branch){const i=branches.indexOf(branch);if([11,0,1].includes(i))return'坎宫';if([2,3,4].includes(i))return'震/巽宫';if([5,6,7].includes(i))return'离宫';return'兑/乾宫'}
 function placeSequenceInPalaces(startValue,sequence,reverse=false){const start=sequence.indexOf(startValue),out={};palaces.forEach((p,i)=>out[p]=sequence[mod(start+(reverse?-i:i),sequence.length)]);return out}
 function findPalace(map,value){return Object.keys(map).find(k=>map[k]===value)||'未找到'}
+function findFlyingPalace(startValue,targetValue,sequence,reverse=false){
+  const start=sequence.indexOf(startValue),target=sequence.indexOf(targetValue);
+  if(start<0||target<0)return'未找到';
+  const steps=mod(target-start,sequence.length);
+  return palaces[mod(reverse?-steps:steps,palaces.length)];
+}
 const nayin=['海中金','海中金','炉中火','炉中火','大林木','大林木','路旁土','路旁土','剑锋金','剑锋金','山头火','山头火','涧下水','涧下水','城头土','城头土','白蜡金','白蜡金','杨柳木','杨柳木','泉中水','泉中水','屋上土','屋上土','霹雳火','霹雳火','松柏木','松柏木','长流水','长流水','沙中金','沙中金','山下火','山下火','平地木','平地木','壁上土','壁上土','金箔金','金箔金','覆灯火','覆灯火','天河水','天河水','大驿土','大驿土','钗钏金','钗钏金','桑柘木','桑柘木','大溪水','大溪水','沙中土','沙中土','天上火','天上火','石榴木','石榴木','大海水','大海水'];
 const lu={甲:'寅',乙:'卯',丙:'巳',戊:'巳',丁:'午',己:'午',庚:'申',辛:'酉',壬:'亥',癸:'子'};
 const noble={甲:['未','丑'],乙:['申','子'],丙:['酉','亥'],丁:['亥','酉'],戊:['丑','未'],己:['子','申'],庚:['丑','未'],辛:['寅','午'],壬:['卯','巳'],癸:['巳','卯']};
@@ -61,7 +74,8 @@ function dateLabel(date){return new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/
 function monthFiveYellowAtSitting(month,sitting){return fly(numberCycle(month.center))[palaceByMountain[sitting]]===5}
 function auspiciousDateRecord(date,input,principal,otherBranches){
   const context=solarMonthContext(date),month=context.month,monthOpposite=oppositeBranch(principal.branch);
-  if(month.branch===monthOpposite)return null;
+  const monthConflict=month.branch===monthOpposite;
+  if(monthConflict&&input.scope!=='month')return null;
   const day=dayStemBranch(date),principalOpposite=oppositeBranch(principal.branch);
   if(day.branch===principalOpposite||otherBranches.some(branch=>day.branch===oppositeBranch(branch)))return null;
   const buildStar=buildStarFor(month.branch,day.branch);
@@ -75,29 +89,33 @@ function auspiciousDateRecord(date,input,principal,otherBranches){
   if(day.branch===lu[principal.stem])dayBonuses.push('禄日');
   if(day.branch===groupResult(principal.branch,'horse'))dayBonuses.push('马日');
   const yellow=yellowDayBranches[context.index].includes(day.branch),score=monthBonuses.length+dayBonuses.length+(yellow?1:0);
-  return{date,day,context,buildStar,monthBonuses,dayBonuses,yellow,score,level:score>=3?'最优':score>=1?'优选':'可用'};
+  return{date,day,context,buildStar,monthBonuses,dayBonuses,yellow,score,level:score>=3?'最优':score>=1?'优选':'可用',monthConflict};
 }
 function selectAuspiciousDates(input){
   const principal=personalReport(input.birthDate,'male'),otherBranches=(input.otherBirthDates||[]).map(d=>personalReport(d,'male').branch),dates=[];
+  let oppositeMonthPresent=false;
   const startMonth=input.scope==='month'?input.month-1:0,endMonth=input.scope==='month'?input.month-1:11;
   for(let monthIndex=startMonth;monthIndex<=endMonth;monthIndex++){
     const days=new Date(Date.UTC(input.year,monthIndex+1,0)).getUTCDate();
     for(let day=1;day<=days;day++){
-      const record=auspiciousDateRecord(civilDate(input.year,monthIndex,day),input,principal,otherBranches);
+      const date=civilDate(input.year,monthIndex,day);
+      if(input.scope==='month'&&solarMonthContext(date).month.branch===oppositeBranch(principal.branch))oppositeMonthPresent=true;
+      const record=auspiciousDateRecord(date,input,principal,otherBranches);
       if(record)dates.push(record);
     }
   }
   dates.sort((a,b)=>b.score-a.score||b.dayBonuses.length-a.dayBonuses.length||Number(b.yellow)-Number(a.yellow)||b.monthBonuses.length-a.monthBonuses.length||a.date-b.date);
-  return{principal,otherCount:otherBranches.length,dates};
+  return{principal,otherCount:otherBranches.length,dates,oppositeMonthPresent};
 }
 function dateSelectionCard(record,rank,input,otherCount){
   const tags=[...record.monthBonuses,...record.dayBonuses,...(record.yellow?['黄道日']:[]),`${record.buildStar}日`];
-  return`<article class="selection-card level-${record.level}"><div class="selection-rank"><span>${rank}</span><b>${record.level}</b></div><div class="selection-content"><div class="selection-card-head"><div><h4>${dateLabel(record.date)}</h4><p>${record.context.ruleYear} · ${record.context.month.stem}${record.context.month.branch}月 · ${record.day.stem}${record.day.branch}日</p></div><strong>${record.score} 项加分</strong></div><div class="selection-tags">${tags.map(tag=>`<span>${tag}</span>`).join('')}</div><p class="selection-note">已避开事主的对冲月与对冲日${otherCount?`，并避开 ${otherCount} 位重要成员的对冲日`:''}${input.eventType==='moving'?`；月五黄未到${input.sitting}山`:''}。</p></div></article>`;
+  const conflictText=record.monthConflict?'所选日期处于事主对冲月，已按指定月份继续筛选；已避开事主对冲日':'已避开事主的对冲月与对冲日';
+  return`<article class="selection-card level-${record.level}"><div class="selection-rank"><span>${rank}</span><b>${record.level}</b></div><div class="selection-content"><div class="selection-card-head"><div><h4>${dateLabel(record.date)}</h4><p>${record.context.ruleYear} · ${record.context.month.stem}${record.context.month.branch}月 · ${record.day.stem}${record.day.branch}日</p></div><strong>${record.score} 项加分</strong></div><div class="selection-tags">${tags.map(tag=>`<span>${tag}</span>`).join('')}</div><p class="selection-note">${conflictText}${otherCount?`，并避开 ${otherCount} 位重要成员的对冲日`:''}${input.eventType==='moving'?`；月五黄未到${input.sitting}山`:''}。</p></div></article>`;
 }
 function renderDateSelection(input){
-  const result=selectAuspiciousDates(input),scope=input.scope==='year'?`${input.year}年`:`${input.year}年${input.month}月`,best=result.dates.filter(d=>d.level==='最优').length,preferred=result.dates.filter(d=>d.level==='优选').length;
-  if(!result.dates.length){document.querySelector('#dateSelectionResults').innerHTML=`<div class="result-block selection-empty"><div class="section-label">查询结果</div><h3>${scope}没有符合条件的日期</h3><p>可更换月份或年份重新查询。</p></div>`;return result}
-  document.querySelector('#dateSelectionResults').innerHTML=`<div class="result-block selection-summary"><div><div class="section-label">择日结果</div><h3>${scope} · ${input.eventType==='moving'?'搬家':'其他事项'}</h3><p>${result.principal.year} · ${result.principal.gz}年事主${input.eventType==='moving'?` · ${input.sitting}山${oppositeMountain(input.sitting)}向`:''}</p></div><div class="summary-counts"><span><b>${result.dates.length}</b>可用日期</span><span><b>${best}</b>最优</span><span><b>${preferred}</b>优选</span></div></div><div class="result-block"><div class="logic-strip"><span>避开对冲</span><i>→</i><span>筛选开、成、平、定、除</span><i>→</i><span>贵人、禄、马、黄道排序</span></div><div class="selection-list">${result.dates.map((record,index)=>dateSelectionCard(record,index+1,input,result.otherCount)).join('')}</div><p class="rule-note">只显示通过筛选的日期。公历查询范围内，每一天仍按二十四节气确定所属干支月；简易择日不适用于结婚和动土。</p></div>`;
+  const result=selectAuspiciousDates(input),scope=input.scope==='year'?`${input.year}年`:`${input.year}年${input.month}月`,best=result.dates.filter(d=>d.level==='最优').length,preferred=result.dates.filter(d=>d.level==='优选').length,oppositeWarning=result.oppositeMonthPresent?`<div class="overlap-note"><b>对冲月提示：</b>所选公历月份包含事主的对冲月。因月份已由用户指定，本次不删除整月，以下仅继续筛选可用日期。</div>`:'';
+  if(!result.dates.length){document.querySelector('#dateSelectionResults').innerHTML=`${oppositeWarning}<div class="result-block selection-empty"><div class="section-label">查询结果</div><h3>${scope}没有符合条件的日期</h3><p>可更换月份或年份重新查询。</p></div>`;return result}
+  document.querySelector('#dateSelectionResults').innerHTML=`<div class="result-block selection-summary"><div><div class="section-label">择日结果</div><h3>${scope} · ${input.eventType==='moving'?'搬家':'其他事项'}</h3><p>${result.principal.year} · ${result.principal.gz}年事主${input.eventType==='moving'?` · ${input.sitting}山${oppositeMountain(input.sitting)}向`:''}</p></div><div class="summary-counts"><span><b>${result.dates.length}</b>可用日期</span><span><b>${best}</b>最优</span><span><b>${preferred}</b>优选</span></div></div>${oppositeWarning}<div class="result-block"><div class="logic-strip"><span>避开对冲</span><i>→</i><span>筛选开、成、平、定、除</span><i>→</i><span>贵人、禄、马、黄道排序</span></div><div class="selection-list">${result.dates.map((record,index)=>dateSelectionCard(record,index+1,input,result.otherCount)).join('')}</div><p class="rule-note">只显示通过筛选的日期。公历查询范围内，每一天仍按二十四节气确定所属干支月；简易择日不适用于结婚和动土。</p></div>`;
   return result;
 }
 function statDetail(title,value,summary,detail){return`<details class="stat stat-detail"><summary><small>${title}</small><b>${value}</b><em>${summary}</em><span>查看详情</span></summary><div class="stat-more">${detail}</div></details>`}
@@ -107,11 +125,11 @@ function renderAnnual(year){const plate=annualPlate(year),center=annualCenter(ye
 function renderMonths(year,mode){const months=monthSegments(year),active=activeMonth(year);if(mode==='monthly')return moduleHeader(`${ganzhiYear(year)}全年流月盘`,'从立春到下一年立春，完整列出十二个节气月及月盘。',`${year}年`,`<div class="month-cards month-plates">${months.map((m,i)=>{const plate=fly(numberCycle(m.center));return`<article class="month-card ${i===active?'current':''}"><div class="month-card-head"><div><h4>${m.name} · ${m.stem}${m.branch}</h4><p>${cnDate(m.start)} — ${cnDate(m.end)}</p></div>${i===active?'<span class="now-label">当前月</span>':''}</div>${gridHTML(plate,{2:'bad',3:'bad',5:'bad',7:'bad'},true)}<strong>值月星：${starNames[m.center]} · ${m.center}入中</strong></article>`}).join('')}</div><p class="rule-note">正月值月星由年支分组确定，之后每月递减一位，遇零取九。月份以节气划分。</p>`);return moduleHeader(`${ganzhiYear(year)}全年月五虎`,'一次列出十二个月，并分别标明戊、己所到山位。',`${year}年`,`<div class="table-wrap"><table class="year-table"><thead><tr><th>月份</th><th>月干支</th><th>有效时间</th><th>戊所在山</th><th>己所在山</th><th>本月五虎山位</th></tr></thead><tbody>${months.map((m,i)=>{const hits=fiveTigerForStartStem(m.stem),wu=hits.filter(h=>h.stem==='戊').map(h=>h.branch),ji=hits.filter(h=>h.stem==='己').map(h=>h.branch);return`<tr class="${i===active?'current':''}"><td>${m.name}${i===active?' · 当前':''}</td><td>${m.stem}${m.branch}</td><td>${cnDate(m.start)} — ${cnDate(m.end)}</td><td>${wu.join('、')}</td><td>${ji.join('、')}</td><td>${hits.map(h=>`${h.branch}（${h.stem}）`).join('、')}</td></tr>`}).join('')}</tbody></table></div><div class="function-box"><h4>作用与禁忌</h4><p>月五虎是年五虎杀的减弱版，发凶条件相同但程度较轻。月五虎所在山位不可催动；无论催财、文昌、桃花、禄马、利名或贵人，重合时当月一律暂停。</p></div><p class="rule-note">常规从寅位起顺排十天干，只取一个戊位和一个己位；仅逢戊寅起时延伸至子、丑，形成四个五虎山位。</p>`)}
 function yearTigerData(year){const{stem}=yearStemBranch(year),startStem=firstMonthStem(stem);return{year,gz:ganzhiYear(year),startStem,hits:fiveTigerForStartStem(startStem),start:termDate(year-1,22),end:termDate(year+1,2)}}
 function tigerSetHTML(d,label){return`<article class="tiger-set"><div class="tiger-set-head"><div><small>${label}</small><h4>${d.year} · ${d.gz}年</h4></div><span>正月${d.startStem}寅起</span></div><div class="mountain-row">${d.hits.map(h=>`<span class="mountain">${h.branch}<small>${h.stem}</small></span>`).join('')}</div><p>有效期：${cnDate(d.start)} — ${cnDate(d.end)}</p></article>`}
-function renderYearTiger(year){const current=yearTigerData(year),next=yearTigerData(year+1);return moduleHeader(`${ganzhiYear(year)}年五虎杀`,'分别显示当年与第二年的五虎杀及各自有效期。','大雪至立春双存',`<div class="tiger-grid">${tigerSetHTML(current,'当年五虎杀')}${tigerSetHTML(next,'第二年五虎杀')}</div><div class="overlap-note"><b>两年同时存在：</b>${cnDate(termDate(year,22))}（${year}年大雪）至 ${cnDate(termDate(year+1,2))}（${year+1}年立春）。</div><div class="function-box"><h4>作用与禁忌</h4><p>五虎杀又称五方杀，古称“都天戊己杀”，笔记将其列为比五黄更凶险的煞气。所在方位不可催动，催财时必须避开。</p><p>动宅只在第一太极论断；静宅只在第一太极和外局论断。</p></div><p class="rule-note">每组年五虎从上一年大雪提前出现，持续至下一年立春，因此查询年大雪之后会叠加第二年的五虎杀。</p>`)}
+function renderYearTiger(year){const current=yearTigerData(year),next=yearTigerData(year+1);return moduleHeader(`${ganzhiYear(year)}年五虎杀`,'分别显示当年与第二年的五虎杀及各自有效期。','大雪至立春双存',`<div class="tiger-grid">${tigerSetHTML(current,'当年五虎杀')}${tigerSetHTML(next,'第二年五虎杀')}</div><div class="overlap-note"><b>两年同时存在：</b>${cnDate(termDate(year,22))}（${year}年大雪）至 ${cnDate(termDate(year+1,2))}（${year+1}年立春）。</div><div class="function-box"><h4>作用与禁忌</h4><p>五虎杀又称五方杀，古称“都天戊己杀”。所在方位不可催动，催财时必须避开。</p><p>动宅只在第一太极论断；静宅只在第一太极和外局论断。</p></div><p class="rule-note">每组年五虎从上一年大雪提前出现，持续至下一年立春，因此查询年大雪之后会叠加第二年的五虎杀。</p>`)}
 function renderEarth(year){const{branch}=yearStemBranch(year),opp=branches[mod(branches.indexOf(branch)+6,12)],ss=groupResult(branch,'sansha'),toward=ss.map(b=>branches[mod(branches.indexOf(b)+6,12)]);return moduleHeader(`${ganzhiYear(year)}太岁、岁破与年三煞`,'这里计算通用山位；判断住宅是否犯煞仍需坐山。',`${year}年`,`<div class="detail-list"><div class="detail-item"><small>太岁</small><b>${branch}山</b></div><div class="detail-item"><small>岁破</small><b>${opp}山</b></div><div class="detail-item"><small>三煞山</small><b>${ss.join('、')}</b></div><div class="detail-item"><small>向煞</small><b>${toward.join('、')}</b></div></div><p class="rule-note">夹煞位于三煞地支之间所夹的天干山，具体罗盘标注在完整二十四山视图中呈现。</p>`)}
 function renderHidden(year){const months=monthSegments(year),active=activeMonth(year);return moduleHeader(`${ganzhiYear(year)}全年暗建杀`,'由每月值月星返回洛书原位确定。',`${year}年`,`<div class="table-wrap"><table class="year-table"><thead><tr><th>月份</th><th>月干支</th><th>值月星</th><th>暗建杀</th></tr></thead><tbody>${months.map((m,i)=>`<tr class="${i===active?'current':''}"><td>${m.name}</td><td>${m.stem}${m.branch}</td><td>${m.center} 入中</td><td>${m.center===5?'无':guaByNumber[m.center]+'宫'}</td></tr>`).join('')}</tbody></table></div><div class="function-box"><h4>作用与禁忌</h4><p>暗建杀是随月份变动的月杀。暗建杀所在卦位当月严禁动土；值月飞星五居中宫时，该月没有暗建杀。</p></div><p class="rule-note">其余月份取值月星在洛书中的原始宫位，作为当月暗建杀所在卦位。</p>`)}
-function renderNoble(year){const{stem,branch}=yearStemBranch(year),[yang,yin]=noble[stem],forward=placeSequenceInPalaces(branch,branches),reverse=placeSequenceInPalaces(branch,branches,true),yp=findPalace(forward,yang),ip=findPalace(reverse,yin);return moduleHeader(`${ganzhiYear(year)}天乙贵人`,'阳贵顺飞、阴贵逆飞；用事切换点为冬至和夏至。',`${stem}年`,`<div class="detail-list"><div class="detail-item"><small>阳贵人</small><b>${yang} · ${yp}</b></div><div class="detail-item"><small>阴贵人</small><b>${yin} · ${ip}</b></div><div class="detail-item"><small>阳贵用事</small><b>上一年冬至至本年夏至</b></div><div class="detail-item"><small>阴贵用事</small><b>本年夏至至本年冬至</b></div></div><div class="function-box"><h4>作用与使用</h4><p>一白至九紫是流年、流月飞星，其中二黑、三碧、五黄、七赤为凶星。天乙贵人同宫时，可化解流年或流月二黑、三碧、七赤的凶性；五黄力量太强，不能化解。</p><p>五虎不属于流年、流月飞星，也不能由天乙贵人化解。天乙贵人同样不能改变宅盘五气、禁催同宫组合、外局冲煞或布局缺陷。</p></div><p class="rule-note">若贵人地支本身所在的二十四山与飞布后的卦宫一致，笔记称为“还家贵人”。</p>`)}
-function renderWenchang(year){const{stem,branch}=yearStemBranch(year),target=annualWenchang[stem],p=findPalace(placeSequenceInPalaces(branch,branches),target),four=findPalace(annualPlate(year),4),usable=p!=='中宫';return moduleHeader(`${ganzhiYear(year)}流年文昌`,'流年文昌采用独立公式，与流年九星盘中的四绿文昌星不是同一项。',`${stem} → ${target}`,`<div class="compare-grid"><article class="compare-card emphasis"><small>流年文昌</small><h4>${usable?p+' · '+palaceShort[p]:'中宫，本年无可用方位'}</h4><p>先查年干对应的文昌地支 ${target}，再把年支 ${branch} 入中顺飞，取 ${target} 所到宫位。</p></article><article class="compare-card"><small>流年盘四绿文昌星</small><h4>${four} · ${palaceShort[four]}</h4><p>四绿的位置直接从流年九星盘读取，计算路径不同，所以两者可能落在不同宫位。</p></article></div><div class="function-box"><h4>作用与使用</h4><p>流年文昌用于加强活跃思考、学习考试和知识工作的效率，适合学生，以及写作、新闻、刑侦等需要持续动脑的人。方位只在所查询的流年内使用；若飞入中宫，该年没有可用的流年文昌方位。</p><p>按笔记中的选用次序：流年文昌优先于四绿文昌星，四绿文昌星再优先于屋宅文昌；实际布置仍须避开宅盘与流年中的不利因素。</p></div>`)}
+function renderNoble(year){const{stem,branch}=yearStemBranch(year),[yang,yin]=noble[stem],yp=findFlyingPalace(branch,yang,branches),ip=findFlyingPalace(branch,yin,branches,true);return moduleHeader(`${ganzhiYear(year)}天乙贵人`,'阳贵顺飞、阴贵逆飞；用事切换点为冬至和夏至。',`${stem}年`,`<div class="detail-list"><div class="detail-item"><small>阳贵人</small><b>${yang} · ${yp}</b></div><div class="detail-item"><small>阴贵人</small><b>${yin} · ${ip}</b></div><div class="detail-item"><small>阳贵用事</small><b>上一年冬至至本年夏至</b></div><div class="detail-item"><small>阴贵用事</small><b>本年夏至至本年冬至</b></div></div><div class="function-box"><h4>作用与使用</h4><p>一白至九紫是流年、流月飞星，其中二黑、三碧、五黄、七赤为凶星。天乙贵人同宫时，可化解流年或流月二黑、三碧、七赤的凶性。</p><p>五虎不属于流年、流月飞星，也不能由天乙贵人化解。天乙贵人同样不能改变宅盘五气、禁催同宫组合、外局冲煞或布局缺陷。</p></div><p class="rule-note">若贵人地支本身所在的二十四山与飞布后的卦宫一致，称为“还家贵人”。</p>`)}
+function renderWenchang(year){const{stem,branch}=yearStemBranch(year),target=annualWenchang[stem],p=findFlyingPalace(branch,target,branches),four=findPalace(annualPlate(year),4),usable=p!=='中宫';return moduleHeader(`${ganzhiYear(year)}流年文昌`,'流年文昌采用独立公式，与流年九星盘中的四绿文昌星不是同一项。',`${stem} → ${target}`,`<div class="compare-grid"><article class="compare-card emphasis"><small>流年文昌</small><h4>${usable?p+' · '+palaceShort[p]:'中宫，本年无可用方位'}</h4><p>先查年干对应的文昌地支 ${target}，再把年支 ${branch} 入中顺飞，取 ${target} 所到宫位。</p></article><article class="compare-card"><small>流年盘四绿文昌星</small><h4>${four} · ${palaceShort[four]}</h4><p>四绿的位置直接从流年九星盘读取，计算路径不同，所以两者可能落在不同宫位。</p></article></div><div class="function-box"><h4>作用与使用</h4><p>流年文昌用于加强活跃思考、学习考试和知识工作的效率，适合学生，以及写作、新闻、刑侦等需要持续动脑的人。方位只在所查询的流年内使用；若飞入中宫，该年没有可用的流年文昌方位。</p><p>选用次序：流年文昌优先于四绿文昌星，四绿文昌星再优先于屋宅文昌；实际布置仍须避开宅盘与流年中的不利因素。</p></div>`)}
 function renderFame(year){const{stem,branch}=yearStemBranch(year),earthBranch=branches[mod(branches.indexOf(branch)+3,12)],earthPalace=branchExactPalace(earthBranch),stemMap=placeSequenceInPalaces(stem,stems),three={壬:findPalace(stemMap,'壬'),癸:findPalace(stemMap,'癸'),辛:findPalace(stemMap,'辛')},match=Object.entries(three).find(([,p])=>p===earthPalace);return moduleHeader(`${ganzhiYear(year)}利名星`,'土曲星与地三奇同宫时，该宫才形成利名星。',match?'本年形成':'本年未形成',`<div class="detail-list"><div class="detail-item"><small>土曲星</small><b>${earthBranch}山 · ${earthPalace}</b></div><div class="detail-item"><small>地三奇</small><b>壬 ${three.壬} · 癸 ${three.癸} · 辛 ${three.辛}</b></div><div class="detail-item"><small>计算结论</small><b>${match?match[1]+'为利名星':'土曲星未与地三奇重合'}</b></div></div><div class="function-box"><h4>作用与使用</h4><p>利名星适合短期冲刺，可提升考试、面试或关键场合的临场应变能力，也有助于职场表现和升职。找到方位后，可在该方位工作或学习以获得增益，只在第一空间使用。</p><p>长期备考和持续学习仍以文昌位为主；利名星侧重临近考试或重要表现期的短期使用。</p></div><p class="rule-note">十二建除从年支起“建”顺排，找到“平”为土曲星；再将年干入中顺飞，查壬、癸、辛三奇是否重合。</p>`)}
 
 const mountainOrder=['子','癸','丑','艮','寅','甲','卯','乙','辰','巽','巳','丙','午','丁','未','坤','申','庚','酉','辛','戌','乾','亥','壬'];
@@ -148,8 +166,8 @@ function annualNobleAt(year,date){
   let useYear=year,kind='阳';
   const summer=termDate(year,11),winter=termDate(year,23);
   if(date>=winter){useYear=year+1;kind='阳'}else if(date>=summer)kind='阴';
-  const{stem,branch}=yearStemBranch(useYear),[yang,yin]=noble[stem],target=kind==='阳'?yang:yin,map=kind==='阳'?placeSequenceInPalaces(branch,branches):placeSequenceInPalaces(branch,branches,true);
-  return{year:useYear,kind,target,palace:findPalace(map,target)};
+  const{stem,branch}=yearStemBranch(useYear),[yang,yin]=noble[stem],target=kind==='阳'?yang:yin;
+  return{year:useYear,kind,target,palace:findFlyingPalace(branch,target,branches,kind==='阴')};
 }
 function activeTigerMountains(year,date){
   const sets=[yearTigerData(year)];
@@ -228,7 +246,7 @@ function residentialOpportunities(ctx,personal){
   const ops=[];
   const yearText=`${ctx.year} · ${ganzhiYear(ctx.year)}年`;
   Object.keys(ctx.relations).filter(p=>p!=='中宫'&&ctx.relations[p]==='财位').forEach(p=>ops.push({type:'wealth',title:'催财',source:'宅盘财位',palace:p,method:'可按现场条件选用鱼缸或合规植物；流年财星只作加分。'}));
-  const{stem,branch}=yearStemBranch(ctx.year),wen=annualWenchang[stem],wenPalace=findPalace(placeSequenceInPalaces(branch,branches),wen);
+  const{stem,branch}=yearStemBranch(ctx.year),wen=annualWenchang[stem],wenPalace=findFlyingPalace(branch,wen,branches);
   if(wenPalace!=='中宫')ops.push({type:'wenchang',title:'流年文昌',source:`${yearText}文昌${wen}`,palace:wenPalace,method:'适合安放书桌、学习或持续脑力工作，也可按文昌规则使用植物。'});
   const fourPalace=findPalace(ctx.annual,4);
   if(fourPalace!=='中宫')ops.push({type:'wenchang',title:'四绿文昌星',source:`${yearText}流年九星`,palace:fourPalace,method:'作为文昌辅助位置，适合学习与知识工作。'});
@@ -255,7 +273,7 @@ function activationCard(op,result){
 function renderResidential(input){
   const date=input.date,year=effectiveYear(date),house=housePlate(input.sitting),relations=houseRelations(house),annual=annualPlate(year),month=monthForDate(year,date),annualNoble=annualNobleAt(year,date),yearTigers=activeTigerMountains(year,date),ctx={date,year,house,relations,annual,month,annualNoble,yearTigers};
   const personal=input.birthDate?personalReport(input.birthDate,input.gender):null,ops=residentialOpportunities(ctx,personal),results=ops.map(op=>({op,result:op.unavailable?{status:'本年未形成',level:'unavailable',reasons:['土曲星未与地三奇同宫'],warnings:[],resume:'下一立春后重新计算'}:activationWindow(op,ctx)})),counts={ok:results.filter(x=>x.result.level==='ok').length,paused:results.filter(x=>x.result.level==='paused').length,critical:results.filter(x=>['critical','blocked','unavailable'].includes(x.result.level)).length};
-  document.querySelector('#residentialResults').innerHTML=`<div class="result-block house-summary"><div><div class="section-label">住宅总览</div><h3>${input.sitting}山${oppositeMountain(input.sitting)}向 · ${guaByNumber[house['中宫']]}宅</h3><p>${year} · ${ganzhiYear(year)}年 · ${month.name}${month.stem}${month.branch}月</p></div><div class="summary-counts"><span><b>${counts.ok}</b>可催动</span><span><b>${counts.paused}</b>本月暂停</span><span><b>${counts.critical}</b>禁催/警示</span></div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">生杀五气宅盘</div><h3>坐山卦数 ${house['中宫']} 入中顺飞</h3></div><span class="tag">固定宅盘</span></div>${houseGridHTML(house,relations)}<p class="rule-note">宅盘中的生气方即为屋宅固定财位。</p></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">当前催动判断</div><h3>可催动项目一览表</h3></div><span class="tag">${cnDate(date)}</span></div><div class="logic-strip"><span>宅盘定资格</span><i>→</i><span>流年定年度基础</span><i>→</i><span>流月定时间</span></div><div class="activation-list">${results.map(x=>activationCard(x.op,x.result)).join('')}</div></div><div class="result-block caution-panel"><div class="section-label">使用说明</div><h3>使用前注意事项</h3><ul><li>诸君，房屋的坐向只能用罗盘进行测量，万不可用指南针、手机罗盘进行测量。</li><li>未学习过相关知识的人不建议擅自进行催动，否则可能出现负面效果。</li><li>趋吉必先避凶，房屋若有缺陷未解决，则催吉无效。</li><li>天乙贵人不可化解五虎、五黄、外局冲煞及布局缺陷。</li><li>停止催动是指关闭或遮盖鱼缸、移走催动植物，或停止刻意使用该位置，不等于不能正常经过。</li><li>实际布置还要核对缺角、门窗、走道、房间用途等现场条件，计算结果仅供参考。</li></ul></div>`;
+  document.querySelector('#residentialResults').innerHTML=`<div class="result-block house-summary"><div><div class="section-label">住宅总览</div><h3>${input.sitting}山${oppositeMountain(input.sitting)}向 · ${guaByNumber[house['中宫']]}宅</h3><p>${year} · ${ganzhiYear(year)}年 · ${month.name}${month.stem}${month.branch}月</p></div><div class="summary-counts"><span><b>${counts.ok}</b>可催动</span><span><b>${counts.paused}</b>本月暂停</span><span><b>${counts.critical}</b>禁催/警示</span></div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">生杀五气宅盘</div><h3>坐山卦数 ${house['中宫']} 入中顺飞</h3></div><span class="tag">固定宅盘</span></div>${houseGridHTML(house,relations)}<p class="rule-note">宅盘中的生气方即为屋宅固定财位。</p></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">当前催动判断</div><h3>可催动项目一览表</h3></div><span class="tag">${cnDate(date)}</span></div><div class="logic-strip"><span>宅盘定资格</span><i>→</i><span>流年定年度基础</span><i>→</i><span>流月定时间</span></div><div class="activation-list">${results.map(x=>activationCard(x.op,x.result)).join('')}</div></div><div class="result-block caution-panel"><div class="section-label">使用说明</div><h3>使用前注意事项</h3><ul><li>房屋坐向只能使用罗盘进行测量，不能使用指南针、手机罗盘进行测量。</li><li>未学习过相关知识的人不建议擅自进行催动，否则可能出现负面效果。</li><li>趋吉必先避凶，房屋若有缺陷未解决，则催吉无效。</li><li>天乙贵人不可化解五虎、五黄、外局冲煞及布局缺陷。</li><li>停止催动是指关闭或遮盖鱼缸、移走催动植物，或停止刻意使用该位置，不等于不能正常经过。</li><li>实际布置还要核对缺角、门窗、走道、房间用途等现场条件，计算结果仅供参考。</li></ul></div>`;
   return{year,sitting:input.sitting,facing:oppositeMountain(input.sitting),house,relations,opportunities:results};
 }
 
@@ -312,7 +330,7 @@ function relationCopy(aName,aElement,bName,bElement){
 function nineStarPriority(bed,star,palace){
   const sameBedStar=bed.element===star.element,starGeneratesBed=generates[star.element]===bed.element,bedGeneratesStar=generates[bed.element]===star.element;
   const samePalaceStar=palace.element===star.element,palaceGeneratesStar=generates[palace.element]===star.element,starControlsPalace=controls[star.element]===palace.element;
-  if(bed.yinYang==='阳'){
+  if(star.yinYang==='阳'){
     if((starGeneratesBed||sameBedStar)&&(palaceGeneratesStar||samePalaceStar))return{tier:4,label:'首选',rule:'门星生床卦或比助，同时门卦生门星或比助'};
     if(sameBedStar&&starControlsPalace)return{tier:3,label:'次选',rule:'门星与床卦比助，同时门星克门卦'};
     if(starGeneratesBed&&starControlsPalace)return{tier:2,label:'第三优先',rule:'门星生床卦，同时门星克门卦'};
