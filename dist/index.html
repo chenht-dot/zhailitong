@@ -6,7 +6,9 @@
   <meta name="description" content="依据阳宅风水笔记规则整理的个人与通用风水计算工具。">
   <title>宅理通｜阳宅风水计算工具</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2310232a'/%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='%23d7bc78' stroke-width='3'/%3E%3Cpath d='M32 11v42M11 32h42M17 17l30 30M47 17L17 47' stroke='%23f5f1e6' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%23c9543d'/%3E%3C/svg%3E">
+  <script src="theme-init.js"></script>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="preview.css">
 </head>
 <body>
   <div class="shell">
@@ -15,7 +17,13 @@
         <span class="brand-mark" aria-hidden="true"><i></i></span>
         <span><b>宅理通</b><small>阳宅风水计算工具</small></span>
       </a>
-      <div class="year-chip" id="todayChip"></div>
+      <div class="topbar-actions">
+        <div class="year-chip" id="todayChip"></div>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换为深色主题" aria-pressed="false">
+          <span class="theme-choice-light">明亮</span>
+          <span class="theme-choice-dark">深色</span>
+        </button>
+      </div>
     </header>
 
     <main>
@@ -66,30 +74,43 @@
 
       <section id="residential" class="mode-panel" aria-labelledby="residentialTitle">
         <div class="workspace-grid residential-grid">
-          <form class="control-card" id="residentialForm">
+          <form class="control-card scroll-control-form" id="residentialForm">
             <div class="section-label">住宅资料</div>
             <h2 id="residentialTitle">排宅盘，判断可催动方位与时间</h2>
-            <label>房屋坐山
-              <select id="sittingMountain" required></select>
-            </label>
-            <label>查询日期
-              <input type="date" id="residentialDate" required>
-            </label>
-            <label>使用者出生日期 <span class="optional">用于个人方位</span>
-              <input type="date" id="residentBirthDate" value="1990-06-15">
-            </label>
-            <label>出生时间 <span class="optional">用于立春交界</span>
-              <input type="time" id="residentBirthTime" value="12:00">
-            </label>
-            <fieldset>
-              <legend>使用者性别</legend>
-              <div class="segmented">
-                <label><input type="radio" name="residentGender" value="male" checked><span>男</span></label>
-                <label><input type="radio" name="residentGender" value="female"><span>女</span></label>
-              </div>
-            </fieldset>
-            <button class="primary" type="submit">生成住宅判断</button>
-            <p class="form-note">坐向按二十四山选择，不要求输入具体度数。个人资料只用于禄马、桃花和个人贵人等方位。</p>
+
+            <div class="scroll-control-fields" tabindex="0" aria-label="住宅计算条件">
+              <section class="scroll-control-group" aria-labelledby="houseConditionGroupTitle">
+                <h3 class="scroll-control-group-title" id="houseConditionGroupTitle">住宅条件</h3>
+                <label>房屋坐山
+                  <select id="sittingMountain" required></select>
+                </label>
+                <label>查询日期
+                  <input type="date" id="residentialDate" required>
+                </label>
+              </section>
+
+              <section class="scroll-control-group" aria-labelledby="residentProfileGroupTitle">
+                <h3 class="scroll-control-group-title" id="residentProfileGroupTitle">使用者资料</h3>
+                <label>使用者出生日期 <span class="optional">用于个人方位</span>
+                  <input type="date" id="residentBirthDate" value="1990-06-15">
+                </label>
+                <label>出生时间 <span class="optional">用于立春交界</span>
+                  <input type="time" id="residentBirthTime" value="12:00">
+                </label>
+                <fieldset>
+                  <legend>使用者性别</legend>
+                  <div class="segmented">
+                    <label><input type="radio" name="residentGender" value="male" checked><span>男</span></label>
+                    <label><input type="radio" name="residentGender" value="female"><span>女</span></label>
+                  </div>
+                </fieldset>
+              </section>
+            </div>
+
+            <div class="scroll-control-actions">
+              <button class="primary" type="submit">生成住宅判断</button>
+              <p class="form-note">坐向按二十四山选择，不要求输入具体度数。个人资料只用于禄马、桃花和个人贵人等方位。</p>
+            </div>
           </form>
 
           <div class="result-area" id="residentialResults" aria-live="polite"></div>
@@ -149,50 +170,63 @@
 
       <section id="date-selection" class="mode-panel" aria-labelledby="dateSelectionTitle">
         <div class="workspace-grid date-selection-grid">
-          <form class="control-card" id="dateSelectionForm">
+          <form class="control-card scroll-control-form" id="dateSelectionForm">
             <div class="section-label">简易择日</div>
             <h2 id="dateSelectionTitle">筛选可用日期，按条件由优到次排列</h2>
 
-            <fieldset>
-              <legend>查询方式</legend>
-              <div class="segmented">
-                <label><input type="radio" name="dateScope" value="year" checked><span>按年查询</span></label>
-                <label><input type="radio" name="dateScope" value="month"><span>按月查询</span></label>
-              </div>
-            </fieldset>
+            <div class="scroll-control-fields" tabindex="0" aria-label="简易择日筛选条件">
+              <section class="scroll-control-group" aria-labelledby="dateRangeGroupTitle">
+                <h3 class="scroll-control-group-title" id="dateRangeGroupTitle">查询范围</h3>
+                <fieldset>
+                  <legend>查询方式</legend>
+                  <div class="segmented">
+                    <label><input type="radio" name="dateScope" value="year" checked><span>按年查询</span></label>
+                    <label><input type="radio" name="dateScope" value="month"><span>按月查询</span></label>
+                  </div>
+                </fieldset>
 
-            <label>查询年份
-              <input type="number" id="selectionYear" min="1901" max="2099" required>
-            </label>
-            <label id="selectionMonthLabel" hidden>查询月份
-              <select id="selectionMonth"></select>
-            </label>
+                <label>查询年份
+                  <input type="number" id="selectionYear" min="1901" max="2099" required>
+                </label>
+                <label id="selectionMonthLabel" hidden>查询月份
+                  <select id="selectionMonth"></select>
+                </label>
+              </section>
 
-            <fieldset>
-              <legend>事项</legend>
-              <div class="segmented">
-                <label><input type="radio" name="eventType" value="moving" checked><span>搬家</span></label>
-                <label><input type="radio" name="eventType" value="other"><span>其他事项</span></label>
-              </div>
-            </fieldset>
+              <section class="scroll-control-group" aria-labelledby="dateOwnerGroupTitle">
+                <h3 class="scroll-control-group-title" id="dateOwnerGroupTitle">事项与事主</h3>
+                <fieldset>
+                  <legend>事项</legend>
+                  <div class="segmented">
+                    <label><input type="radio" name="eventType" value="moving" checked><span>搬家</span></label>
+                    <label><input type="radio" name="eventType" value="other"><span>其他事项</span></label>
+                  </div>
+                </fieldset>
 
-            <label>事主出生日期
-              <input type="date" id="selectionBirthDate" value="1990-06-15" required>
-            </label>
-            <label>出生时间 <span class="optional">用于立春交界判断</span>
-              <input type="time" id="selectionBirthTime" value="12:00">
-            </label>
+                <label>事主出生日期
+                  <input type="date" id="selectionBirthDate" value="1990-06-15" required>
+                </label>
+                <label>出生时间 <span class="optional">用于立春交界判断</span>
+                  <input type="time" id="selectionBirthTime" value="12:00">
+                </label>
+              </section>
 
-            <label id="selectionSittingLabel">房屋坐山
-              <select id="selectionSitting" required></select>
-            </label>
+              <section class="scroll-control-group" aria-labelledby="dateHouseGroupTitle">
+                <h3 class="scroll-control-group-title" id="dateHouseGroupTitle">房屋条件</h3>
+                <label id="selectionSittingLabel">房屋坐山
+                  <select id="selectionSitting" required></select>
+                </label>
 
-            <label>其他重要成员出生日期 <span class="optional">选填</span>
-              <textarea id="selectionOtherBirthDates" rows="3" placeholder="可填写多个日期，例如：1992-03-08、2015-09-20"></textarea>
-            </label>
+                <label>其他重要成员出生日期 <span class="optional">选填</span>
+                  <textarea id="selectionOtherBirthDates" rows="3" placeholder="可填写多个日期，例如：1992-03-08、2015-09-20"></textarea>
+                </label>
+              </section>
+            </div>
 
-            <button class="primary" type="submit">查询可用日期</button>
-            <p class="form-note">只显示通过筛选的日期。简易择日不适用于结婚和动土；月份规则按二十四节气划分。</p>
+            <div class="scroll-control-actions">
+              <button class="primary" type="submit">查询可用日期</button>
+              <p class="form-note">只显示通过筛选的日期。简易择日不适用于结婚和动土；月份规则按二十四节气划分。</p>
+            </div>
           </form>
 
           <div class="result-area" id="dateSelectionResults" aria-live="polite"></div>
@@ -232,5 +266,6 @@
   </div>
   <script src="solar-terms.js"></script>
   <script src="app.js"></script>
+  <script src="preview.js"></script>
 </body>
 </html>
