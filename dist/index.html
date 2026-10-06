@@ -9,6 +9,7 @@
   <script src="theme-init.js"></script>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="preview.css">
+  <link rel="stylesheet" href="annual-report.css">
 </head>
 <body>
   <div class="shell">
@@ -264,8 +265,32 @@
       <p>数据仅供参考。联系邮箱：<a href="mailto:chenht_liyuan@126.com">chenht_liyuan@126.com</a></p>
     </footer>
   </div>
+
+  <dialog class="annual-report-dialog" id="annualReportDialog" aria-labelledby="annualReportTitle">
+    <div class="annual-report-toolbar">
+      <div>
+        <p>住宅计算报告</p>
+        <h2 id="annualReportTitle">房屋布局指南预览</h2>
+      </div>
+      <div class="annual-report-toolbar-actions">
+        <label class="annual-report-option">
+          <input type="checkbox" id="annualReportIncludePersonal" checked>
+          <span>包含个人项目</span>
+        </label>
+        <label class="annual-report-option">
+          <input type="checkbox" id="annualReportShowBirthDate">
+          <span>显示出生日期</span>
+        </label>
+        <button class="annual-report-close" id="annualReportClose" type="button">关闭</button>
+        <button class="annual-report-print" id="annualReportPrint" type="button">打印／保存 PDF</button>
+      </div>
+    </div>
+    <div class="annual-report-preview" id="annualReportPreview" tabindex="0"></div>
+  </dialog>
+
   <script src="solar-terms.js"></script>
   <script src="app.js"></script>
+  <script src="annual-report.js"></script>
   <script src="preview.js"></script>
 </body>
 </html>
