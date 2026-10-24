@@ -97,8 +97,8 @@
       });
       return{...month,available,partial,blocked,hasBoundary:overlapping.length>1};
     });
-    const personal=input.birthDate?engine.personalReport(input.birthDate,input.gender):null;
-    return{input,year,start:boundaries[0],end:boundaries.at(-1),house:engine.housePlate(input.sitting),relations:engine.houseRelations(engine.housePlate(input.sitting)),projects,months,personal};
+    const personal=input.birthDate?engine.personalReport(input.birthDate,input.gender):null,sanshaChecks=engine.residentialSanshaAssessment(input,year,personal);
+    return{input,year,start:boundaries[0],end:boundaries.at(-1),house:engine.housePlate(input.sitting),relations:engine.houseRelations(engine.housePlate(input.sitting)),projects,months,personal,sanshaChecks};
   }
 
   function projectSummary(project){
@@ -114,6 +114,20 @@
       const relation=data.relations[palace],good=['财位','旺气'].includes(relation),danger=['煞气','内关煞'].includes(relation);
       return `<div class="report-house-cell ${palace==='中宫'?'center ':''}${good?'good':danger?'danger':''}"><small>${palace} · ${engine.palaceShort[palace]}</small><b>${data.house[palace]}</b><strong>${relation}</strong><span>${palace==='中宫'?'坐山卦入中':(engine.palaceMountains[palace]||[]).join('、')}</span></div>`;
     }).join('')}</div>`;
+  }
+
+  function reportSanshaGroups(check){
+    if(!check.groups)return'';
+    return `<div class="report-sansha-groups">${[['三煞',check.groups.sansha,'三煞山'],['向杀',check.groups.toward,'向杀山'],['夹杀',check.groups.jiasha,'夹杀山']].map(([label,mountains,type])=>`<span class="${check.hitType===type?'active':''}"><small>${label}</small><b>${mountains.join('、')}</b></span>`).join('')}</div>`;
+  }
+
+  function reportSanshaItem(check){
+    const tone=check.hit===null?'unknown':check.hit?'risk':'clear',status=check.hit===null?'未判断':check.hitType||'三项均未犯';
+    return `<div class="report-sansha-item ${tone}"><div><small>${check.label}</small><strong>${check.source}</strong></div><span>${status}</span>${reportSanshaGroups(check)}<p>${check.detail}</p></div>`;
+  }
+
+  function reportSanshaAudit(data){
+    return `<div class="report-sansha-audit"><div class="report-sansha-heading"><div><small>坐山风险核对</small><strong>三煞、向杀与夹杀</strong></div><span>仅作风险提示</span></div><div class="report-sansha-list">${reportSanshaItem(data.sanshaChecks.natal)}${reportSanshaItem(data.sanshaChecks.annual)}</div><p class="report-sansha-note">此项不改变本报告现有催动项目的计算与判定。</p></div>`;
   }
 
   function projectRows(project){
@@ -162,6 +176,7 @@
         <div class="report-section-heading"><div><h2>固定宅盘</h2><p>坐山卦数 ${data.house['中宫']} 入中顺飞，宅盘资格是所有催动判断的第一层。</p></div><span>${data.input.sitting}山${engine.oppositeMountain(data.input.sitting)}向</span></div>
         ${houseGrid(data)}
         <p class="report-note">宅盘中的财位是屋宅固定财位；煞气与内关煞所在宫位不参与催动。</p>
+        ${reportSanshaAudit(data)}
       </section>
 
       <section class="report-section report-calendar-section">

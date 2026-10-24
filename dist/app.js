@@ -126,7 +126,7 @@ function renderMonths(year,mode){const months=monthSegments(year),active=activeM
 function yearTigerData(year){const{stem}=yearStemBranch(year),startStem=firstMonthStem(stem);return{year,gz:ganzhiYear(year),startStem,hits:fiveTigerForStartStem(startStem),start:termDate(year-1,22),end:termDate(year+1,2)}}
 function tigerSetHTML(d,label){return`<article class="tiger-set"><div class="tiger-set-head"><div><small>${label}</small><h4>${d.year} · ${d.gz}年</h4></div><span>正月${d.startStem}寅起</span></div><div class="mountain-row">${d.hits.map(h=>`<span class="mountain">${h.branch}<small>${h.stem}</small></span>`).join('')}</div><p>有效期：${cnDate(d.start)} — ${cnDate(d.end)}</p></article>`}
 function renderYearTiger(year){const current=yearTigerData(year),next=yearTigerData(year+1);return moduleHeader(`${ganzhiYear(year)}年五虎杀`,'分别显示当年与第二年的五虎杀及各自有效期。','大雪至立春双存',`<div class="tiger-grid">${tigerSetHTML(current,'当年五虎杀')}${tigerSetHTML(next,'第二年五虎杀')}</div><div class="overlap-note"><b>两年同时存在：</b>${cnDate(termDate(year,22))}（${year}年大雪）至 ${cnDate(termDate(year+1,2))}（${year+1}年立春）。</div><div class="function-box"><h4>作用与禁忌</h4><p>五虎杀又称五方杀，古称“都天戊己杀”。所在方位不可催动，催财时必须避开。</p><p>动宅只在第一太极论断；静宅只在第一太极和外局论断。</p></div><p class="rule-note">每组年五虎从上一年大雪提前出现，持续至下一年立春，因此查询年大雪之后会叠加第二年的五虎杀。</p>`)}
-function renderEarth(year){const{branch}=yearStemBranch(year),opp=branches[mod(branches.indexOf(branch)+6,12)],ss=groupResult(branch,'sansha'),toward=ss.map(b=>branches[mod(branches.indexOf(b)+6,12)]);return moduleHeader(`${ganzhiYear(year)}太岁、岁破与年三煞`,'这里计算通用山位；判断住宅是否犯煞仍需坐山。',`${year}年`,`<div class="detail-list"><div class="detail-item"><small>太岁</small><b>${branch}山</b></div><div class="detail-item"><small>岁破</small><b>${opp}山</b></div><div class="detail-item"><small>三煞山</small><b>${ss.join('、')}</b></div><div class="detail-item"><small>向煞</small><b>${toward.join('、')}</b></div></div><p class="rule-note">夹煞位于三煞地支之间所夹的天干山，具体罗盘标注在完整二十四山视图中呈现。</p>`)}
+function renderEarth(year){const{branch}=yearStemBranch(year),opp=branches[mod(branches.indexOf(branch)+6,12)],risk=sanshaRiskGroups(branch);return moduleHeader(`${ganzhiYear(year)}太岁、岁破与年三煞`,'这里计算通用山位；判断住宅是否犯煞仍需坐山。',`${year}年`,`<div class="detail-list"><div class="detail-item"><small>太岁</small><b>${branch}山</b></div><div class="detail-item"><small>岁破</small><b>${opp}山</b></div><div class="detail-item"><small>三煞山</small><b>${risk.sansha.join('、')}</b></div><div class="detail-item"><small>向杀山</small><b>${risk.toward.join('、')}</b></div><div class="detail-item"><small>夹杀山</small><b>${risk.jiasha.join('、')}</b></div></div><p class="rule-note">向杀是三煞三山的对宫；夹杀是夹在三煞地支之间的两座天干山。</p>`)}
 function renderHidden(year){const months=monthSegments(year),active=activeMonth(year);return moduleHeader(`${ganzhiYear(year)}全年暗建杀`,'由每月值月星返回洛书原位确定。',`${year}年`,`<div class="table-wrap"><table class="year-table"><thead><tr><th>月份</th><th>月干支</th><th>值月星</th><th>暗建杀</th></tr></thead><tbody>${months.map((m,i)=>`<tr class="${i===active?'current':''}"><td>${m.name}</td><td>${m.stem}${m.branch}</td><td>${m.center} 入中</td><td>${m.center===5?'无':guaByNumber[m.center]+'宫'}</td></tr>`).join('')}</tbody></table></div><div class="function-box"><h4>作用与禁忌</h4><p>暗建杀是随月份变动的月杀。暗建杀所在卦位当月严禁动土；值月飞星五居中宫时，该月没有暗建杀。</p></div><p class="rule-note">其余月份取值月星在洛书中的原始宫位，作为当月暗建杀所在卦位。</p>`)}
 function renderNoble(year){const{stem,branch}=yearStemBranch(year),[yang,yin]=noble[stem],yp=findFlyingPalace(branch,yang,branches),ip=findFlyingPalace(branch,yin,branches,true);return moduleHeader(`${ganzhiYear(year)}天乙贵人`,'阳贵顺飞、阴贵逆飞；用事切换点为冬至和夏至。',`${stem}年`,`<div class="detail-list"><div class="detail-item"><small>阳贵人</small><b>${yang} · ${yp}</b></div><div class="detail-item"><small>阴贵人</small><b>${yin} · ${ip}</b></div><div class="detail-item"><small>阳贵用事</small><b>上一年冬至至本年夏至</b></div><div class="detail-item"><small>阴贵用事</small><b>本年夏至至本年冬至</b></div></div><div class="function-box"><h4>作用与使用</h4><p>一白至九紫是流年、流月飞星，其中二黑、三碧、五黄、七赤为凶星。天乙贵人同宫时，可化解流年或流月二黑、三碧、七赤的凶性。</p><p>五虎不属于流年、流月飞星，也不能由天乙贵人化解。天乙贵人同样不能改变宅盘五气、禁催同宫组合、外局冲煞或布局缺陷。</p></div><p class="rule-note">若贵人地支本身所在的二十四山与飞布后的卦宫一致，称为“还家贵人”。</p>`)}
 function renderWenchang(year){const{stem,branch}=yearStemBranch(year),target=annualWenchang[stem],p=findFlyingPalace(branch,target,branches),four=findPalace(annualPlate(year),4),usable=p!=='中宫';return moduleHeader(`${ganzhiYear(year)}流年文昌`,'流年文昌采用独立公式，与流年九星盘中的四绿文昌星不是同一项。',`${stem} → ${target}`,`<div class="compare-grid"><article class="compare-card emphasis"><small>流年文昌</small><h4>${usable?p+' · '+palaceShort[p]:'中宫，本年无可用方位'}</h4><p>先查年干对应的文昌地支 ${target}，再把年支 ${branch} 入中顺飞，取 ${target} 所到宫位。</p></article><article class="compare-card"><small>流年盘四绿文昌星</small><h4>${four} · ${palaceShort[four]}</h4><p>四绿的位置直接从流年九星盘读取，计算路径不同，所以两者可能落在不同宫位。</p></article></div><div class="function-box"><h4>作用与使用</h4><p>流年文昌用于加强活跃思考、学习考试和知识工作的效率，适合学生，以及写作、新闻、刑侦等需要持续动脑的人。方位只在所查询的流年内使用；若飞入中宫，该年没有可用的流年文昌方位。</p><p>选用次序：流年文昌优先于四绿文昌星，四绿文昌星再优先于屋宅文昌；实际布置仍须避开宅盘与流年中的不利因素。</p></div>`)}
@@ -143,6 +143,16 @@ const badStars=[2,3,5,7];
 const absolutePairs=['2-5','3-8','6-7','6-9','7-9'];
 
 function oppositeMountain(m){return mountainOrder[mod(mountainOrder.indexOf(m)+12,24)]}
+function sanshaRiskGroups(branch){
+  const sansha=groupResult(branch,'sansha'),toward=sansha.map(oppositeMountain),jiasha=sansha.slice(0,2).map(m=>mountainOrder[mod(mountainOrder.indexOf(m)+1,24)]);
+  return{sansha,toward,jiasha};
+}
+function sanshaHitType(sitting,groups){
+  if(groups.sansha.includes(sitting))return'三煞山';
+  if(groups.toward.includes(sitting))return'向杀山';
+  if(groups.jiasha.includes(sitting))return'夹杀山';
+  return null;
+}
 function housePlate(sitting){return fly(numberCycle(palaceNumber[palaceByMountain[sitting]]))}
 function houseRelation(center,number){
   if(number===5)return'内关煞';
@@ -173,6 +183,18 @@ function activeTigerMountains(year,date){
   const sets=[yearTigerData(year)];
   if(date>=termDate(year,22))sets.push(yearTigerData(year+1));
   return[...new Set(sets.flatMap(s=>s.hits.map(h=>h.branch)))];
+}
+function residentialSanshaAssessment(input,year,personal){
+  const sitting=input.sitting,makeCheck=(label,source,branch)=>{
+    const groups=sanshaRiskGroups(branch),hitType=sanshaHitType(sitting,groups);
+    return{label,source,hit:Boolean(hitType),hitType,groups,mountains:groups.sansha,detail:hitType?`本宅坐${sitting}山，落在${label}${hitType}范围。`:`本宅坐${sitting}山，未落入以上三类山位。`};
+  };
+  return{
+    annual:makeCheck('流年',`${year} · ${ganzhiYear(year)}年`,yearStemBranch(year).branch),
+    natal:personal
+      ?makeCheck('本命',`${personal.year} · ${personal.gz}年出生`,personal.branch)
+      :{label:'本命',source:'需要使用者出生资料',hit:null,hitType:null,groups:null,mountains:[],detail:'填写使用者出生日期后，才可核对本命三煞、向杀与夹杀。'}
+  };
 }
 function monthForDate(year,date){return monthSegments(year).find(m=>date>=m.start&&date<m.end)||monthSegments(year)[0]}
 function monthsFromDate(year,date){return monthSegments(year).filter(m=>m.end>date)}
@@ -242,6 +264,17 @@ function activationWindow(op,ctx){
 function houseGridHTML(plate,relations){
   return`<div class="house-grid">${gridOrder.map(p=>`<div class="house-palace relation-${relations[p]}"><small>${p} · ${palaceShort[p]}</small><b>${plate[p]}</b><strong>${relations[p]}</strong>${p==='中宫'?'<em>坐山卦入中</em>':`<em>${(palaceMountains[p]||[]).join('、')}</em>`}</div>`).join('')}</div>`;
 }
+function sanshaGroupsHTML(check){
+  if(!check.groups)return'';
+  return`<div class="sansha-mountain-groups">${[['三煞',check.groups.sansha,'三煞山'],['向杀',check.groups.toward,'向杀山'],['夹杀',check.groups.jiasha,'夹杀山']].map(([label,mountains,type])=>`<span class="sansha-mountain-group ${check.hitType===type?'active':''}"><small>${label}</small><b>${mountains.join('、')}</b></span>`).join('')}</div>`;
+}
+function sanshaCheckHTML(check){
+  const tone=check.hit===null?'unknown':check.hit?'risk':'clear',status=check.hit===null?'未判断':check.hitType||'三项均未犯';
+  return`<div class="sansha-check ${tone}"><div class="sansha-check-title"><div><small>${check.label}</small><strong>${check.source}</strong></div><span>${status}</span></div>${sanshaGroupsHTML(check)}<p>${check.detail}</p></div>`;
+}
+function residentialSanshaHTML(checks){
+  return`<section class="result-block residential-sansha"><div class="result-section-head"><div><div class="section-label">坐山风险核对</div><h3>三煞、向杀与夹杀</h3></div><span class="tag">仅作风险提示</span></div><div class="sansha-check-list">${sanshaCheckHTML(checks.natal)}${sanshaCheckHTML(checks.annual)}</div><p class="sansha-disclaimer">此项只说明房屋坐山是否落入本命或流年三煞、向杀与夹杀山位，不改变下方现有催动项目的计算与判定。</p></section>`;
+}
 function residentialOpportunities(ctx,personal){
   const ops=[];
   const yearText=`${ctx.year} · ${ganzhiYear(ctx.year)}年`;
@@ -272,9 +305,9 @@ function activationCard(op,result){
 }
 function renderResidential(input){
   const date=input.date,year=effectiveYear(date),house=housePlate(input.sitting),relations=houseRelations(house),annual=annualPlate(year),month=monthForDate(year,date),annualNoble=annualNobleAt(year,date),yearTigers=activeTigerMountains(year,date),ctx={date,year,house,relations,annual,month,annualNoble,yearTigers};
-  const personal=input.birthDate?personalReport(input.birthDate,input.gender):null,ops=residentialOpportunities(ctx,personal),results=ops.map(op=>({op,result:op.unavailable?{status:'本年未形成',level:'unavailable',reasons:['土曲星未与地三奇同宫'],warnings:[],resume:'下一立春后重新计算'}:activationWindow(op,ctx)})),counts={ok:results.filter(x=>x.result.level==='ok').length,paused:results.filter(x=>x.result.level==='paused').length,critical:results.filter(x=>['critical','blocked','unavailable'].includes(x.result.level)).length};
-  document.querySelector('#residentialResults').innerHTML=`<div class="result-block house-summary"><div><div class="section-label">住宅总览</div><h3>${input.sitting}山${oppositeMountain(input.sitting)}向 · ${guaByNumber[house['中宫']]}宅</h3><p>${year} · ${ganzhiYear(year)}年 · ${month.name}${month.stem}${month.branch}月</p></div><div class="house-summary-tools"><div class="summary-counts"><span><b>${counts.ok}</b>可催动</span><span><b>${counts.paused}</b>本月暂停</span><span><b>${counts.critical}</b>禁催/警示</span></div><button class="annual-report-trigger" type="button"><span>生成房屋布局指南</span><small>预览并保存为 PDF</small></button></div></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">生杀五气宅盘</div><h3>坐山卦数 ${house['中宫']} 入中顺飞</h3></div><span class="tag">固定宅盘</span></div>${houseGridHTML(house,relations)}<p class="rule-note">宅盘中的生气方即为屋宅固定财位。</p></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">当前催动判断</div><h3>可催动项目一览表</h3></div><span class="tag">${cnDate(date)}</span></div><div class="logic-strip"><span>宅盘定资格</span><i>→</i><span>流年定年度基础</span><i>→</i><span>流月定时间</span></div><div class="activation-list">${results.map(x=>activationCard(x.op,x.result)).join('')}</div></div><div class="result-block caution-panel"><div class="section-label">使用说明</div><h3>使用前注意事项</h3><ul><li>房屋坐向只能使用罗盘进行测量，不能使用指南针、手机罗盘进行测量。</li><li>未学习过相关知识的人不建议擅自进行催动，否则可能出现负面效果。</li><li>趋吉必先避凶，房屋若有缺陷未解决，则催吉无效。</li><li>天乙贵人不可化解五虎、五黄、外局冲煞及布局缺陷。</li><li>停止催动是指关闭或遮盖鱼缸、移走催动植物，或停止刻意使用该位置，不等于不能正常经过。</li><li>实际布置还要核对缺角、门窗、走道、房间用途等现场条件，计算结果仅供参考。</li></ul></div>`;
-  return{year,sitting:input.sitting,facing:oppositeMountain(input.sitting),house,relations,opportunities:results};
+  const personal=input.birthDate?personalReport(input.birthDate,input.gender):null,sanshaChecks=residentialSanshaAssessment(input,year,personal),ops=residentialOpportunities(ctx,personal),results=ops.map(op=>({op,result:op.unavailable?{status:'本年未形成',level:'unavailable',reasons:['土曲星未与地三奇同宫'],warnings:[],resume:'下一立春后重新计算'}:activationWindow(op,ctx)})),counts={ok:results.filter(x=>x.result.level==='ok').length,paused:results.filter(x=>x.result.level==='paused').length,critical:results.filter(x=>['critical','blocked','unavailable'].includes(x.result.level)).length};
+  document.querySelector('#residentialResults').innerHTML=`<div class="result-block house-summary"><div><div class="section-label">住宅总览</div><h3>${input.sitting}山${oppositeMountain(input.sitting)}向 · ${guaByNumber[house['中宫']]}宅</h3><p>${year} · ${ganzhiYear(year)}年 · ${month.name}${month.stem}${month.branch}月</p></div><div class="house-summary-tools"><div class="summary-counts"><span><b>${counts.ok}</b>可催动</span><span><b>${counts.paused}</b>本月暂停</span><span><b>${counts.critical}</b>禁催/警示</span></div><button class="annual-report-trigger" type="button"><span>生成房屋布局指南</span><small>预览并保存为 PDF</small></button></div></div>${residentialSanshaHTML(sanshaChecks)}<div class="result-block"><div class="result-section-head"><div><div class="section-label">生杀五气宅盘</div><h3>坐山卦数 ${house['中宫']} 入中顺飞</h3></div><span class="tag">固定宅盘</span></div>${houseGridHTML(house,relations)}<p class="rule-note">宅盘中的生气方即为屋宅固定财位。</p></div><div class="result-block"><div class="result-section-head"><div><div class="section-label">当前催动判断</div><h3>可催动项目一览表</h3></div><span class="tag">${cnDate(date)}</span></div><div class="logic-strip"><span>宅盘定资格</span><i>→</i><span>流年定年度基础</span><i>→</i><span>流月定时间</span></div><div class="activation-list">${results.map(x=>activationCard(x.op,x.result)).join('')}</div></div><div class="result-block caution-panel"><div class="section-label">使用说明</div><h3>使用前注意事项</h3><ul><li>房屋坐向只能使用罗盘进行测量，不能使用指南针、手机罗盘进行测量。</li><li>未学习过相关知识的人不建议擅自进行催动，否则可能出现负面效果。</li><li>趋吉必先避凶，房屋若有缺陷未解决，则催吉无效。</li><li>天乙贵人不可化解五虎、五黄、外局冲煞及布局缺陷。</li><li>停止催动是指关闭或遮盖鱼缸、移走催动植物，或停止刻意使用该位置，不等于不能正常经过。</li><li>实际布置还要核对缺角、门窗、走道、房间用途等现场条件，计算结果仅供参考。</li></ul></div>`;
+  return{year,sitting:input.sitting,facing:oppositeMountain(input.sitting),house,relations,sanshaChecks,opportunities:results};
 }
 
 const bedGuaInfo={
@@ -366,9 +399,14 @@ function renderBedPlacement(input){
 }
 let activeModule='annual';
 function renderModule(){const year=Number(document.querySelector('#queryYear').value),map={annual:renderAnnual,monthly:y=>renderMonths(y,'monthly'),yearTiger:renderYearTiger,monthTiger:y=>renderMonths(y,'monthTiger'),earth:renderEarth,hidden:renderHidden,noble:renderNoble,wenchang:renderWenchang,fame:renderFame};document.querySelector('#moduleResult').innerHTML=map[activeModule](year)}
-if(typeof globalThis!=='undefined')globalThis.LiqiEngine={effectiveYear,mingGua,personalReport,annualCenter,annualPlate,monthSegments,fiveTigerForStartStem,yearTigerData,housePlate,houseRelations,houseRelation,annualNobleAt,activeTigerMountains,residentialAnnualBase,residentialMonthBase,activationWindow,residentialOpportunities,monthForDate,ganzhiYear,yearStemBranch,termDate,cnDate,oppositeMountain,dayStemBranch,buildStarFor,monthFiveYellowAtSitting,selectAuspiciousDates,calculateEightHouse,calculateEightDoor,calculateNineStarBeds,renderBedPlacement,renderDateSelection,renderResidential,renderAnnual,renderMonths,renderYearTiger,renderHidden,renderNoble,renderWenchang,renderFame,guaByNumber,palaceShort,palaceMountains};
+if(typeof globalThis!=='undefined')globalThis.LiqiEngine={effectiveYear,mingGua,personalReport,annualCenter,annualPlate,monthSegments,fiveTigerForStartStem,yearTigerData,housePlate,houseRelations,houseRelation,annualNobleAt,activeTigerMountains,sanshaRiskGroups,residentialSanshaAssessment,residentialAnnualBase,residentialMonthBase,activationWindow,residentialOpportunities,monthForDate,ganzhiYear,yearStemBranch,termDate,cnDate,oppositeMountain,dayStemBranch,buildStarFor,monthFiveYellowAtSitting,selectAuspiciousDates,calculateEightHouse,calculateEightDoor,calculateNineStarBeds,renderBedPlacement,renderDateSelection,renderResidential,renderAnnual,renderMonths,renderYearTiger,renderHidden,renderNoble,renderWenchang,renderFame,guaByNumber,palaceShort,palaceMountains};
 if(typeof document!=='undefined'){
-function showMode(mode,updateHash=true){document.querySelectorAll('.mode-tab').forEach(x=>x.classList.toggle('active',x.dataset.mode===mode));document.querySelectorAll('.mode-panel').forEach(x=>x.classList.toggle('active',x.id===mode));if(updateHash&&history.replaceState)history.replaceState(null,'',`#${mode}`)}
+const modeTabs=document.querySelector('.mode-tabs'),modeTabsFrame=document.querySelector('.mode-tabs-frame');
+function syncModeTabsOverflow(){const maxScroll=Math.max(0,modeTabs.scrollWidth-modeTabs.clientWidth);modeTabsFrame.classList.toggle('has-overflow',maxScroll>3);modeTabsFrame.classList.toggle('at-start',modeTabs.scrollLeft<4);modeTabsFrame.classList.toggle('at-end',modeTabs.scrollLeft>=maxScroll-4)}
+function revealModeTab(mode){const tab=document.querySelector(`.mode-tab[data-mode="${mode}"]`);if(!tab||modeTabs.scrollWidth<=modeTabs.clientWidth)return;const maxScroll=modeTabs.scrollWidth-modeTabs.clientWidth,target=Math.max(0,Math.min(maxScroll,tab.offsetLeft-(modeTabs.clientWidth-tab.offsetWidth)/2));modeTabs.scrollTo({left:target,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
+function showMode(mode,updateHash=true){document.querySelectorAll('.mode-tab').forEach(x=>x.classList.toggle('active',x.dataset.mode===mode));document.querySelectorAll('.mode-panel').forEach(x=>x.classList.toggle('active',x.id===mode));revealModeTab(mode);if(updateHash&&history.replaceState)history.replaceState(null,'',`#${mode}`)}
+['wheel','keydown'].forEach(type=>modeTabs.addEventListener(type,()=>modeTabsFrame.classList.add('has-interacted'),{passive:type!=='keydown'}));
+modeTabs.addEventListener('scroll',()=>{if(modeTabs.scrollLeft>4)modeTabsFrame.classList.add('has-interacted');syncModeTabsOverflow()},{passive:true});window.addEventListener('resize',syncModeTabsOverflow);requestAnimationFrame(syncModeTabsOverflow);
 document.querySelectorAll('.mode-tab').forEach(btn=>btn.addEventListener('click',()=>showMode(btn.dataset.mode)));
 document.querySelectorAll('.module-tab').forEach(btn=>btn.addEventListener('click',()=>{activeModule=btn.dataset.module;document.querySelectorAll('.module-tab').forEach(x=>x.classList.toggle('active',x===btn));renderModule()}));
 document.querySelector('#personalForm').addEventListener('submit',e=>{e.preventDefault();const d=document.querySelector('#birthDate').value,t=document.querySelector('#birthTime').value||'12:00',g=document.querySelector('input[name=gender]:checked').value;renderPersonal(personalReport(new Date(`${d}T${t}:00+08:00`),g))});

@@ -39,13 +39,22 @@
         </div>
       </section>
 
-      <nav class="mode-tabs" aria-label="计算类型">
-        <button class="mode-tab active" data-mode="personal">个人计算</button>
-        <button class="mode-tab" data-mode="general">通用计算</button>
-        <button class="mode-tab" data-mode="residential">住宅计算</button>
-        <button class="mode-tab" data-mode="bed-placement">安床助手</button>
-        <button class="mode-tab" data-mode="date-selection">简易择日</button>
-      </nav>
+      <div class="mode-tabs-frame">
+        <nav class="mode-tabs" aria-label="计算类型" aria-describedby="modeTabsHint">
+          <button class="mode-tab active" data-mode="personal">个人计算</button>
+          <button class="mode-tab" data-mode="general">通用计算</button>
+          <button class="mode-tab" data-mode="residential">住宅计算</button>
+          <button class="mode-tab" data-mode="bed-placement">安床助手</button>
+          <button class="mode-tab" data-mode="date-selection">简易择日</button>
+        </nav>
+        <span class="mode-tabs-edge-cue" aria-hidden="true">
+          <svg viewBox="0 0 20 20" focusable="false"><path d="m7 4 6 6-6 6"/></svg>
+        </span>
+        <p class="mode-tabs-scroll-hint" id="modeTabsHint">
+          <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false"><path d="M3 8h16M15 3l5 5-5 5"/></svg>
+          <span>向左滑动查看更多功能</span>
+        </p>
+      </div>
 
       <section id="personal" class="mode-panel active" aria-labelledby="personalTitle">
         <div class="workspace-grid">

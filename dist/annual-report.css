@@ -47,3 +47,25 @@
 
 /* Reserve a true safe area on every printed page so split chapters never cross the frame. */
 @media print{@page{size:A4;margin:9mm 11mm 10mm}.annual-report-document{width:auto;max-width:none;margin:0;padding:0;background:var(--report-paper)}.annual-report-document::before{position:fixed;inset:-4mm;border:1px solid rgba(31,103,94,.42);box-shadow:inset 0 0 0 2px var(--report-paper),inset 0 0 0 3px rgba(31,103,94,.2)}.report-cover{padding-top:1mm}.report-project{-webkit-box-decoration-break:clone;box-decoration-break:clone}.report-period-row,.report-project-head,.report-project-verdict,.report-method{max-width:100%}}
+
+.report-sansha-audit{margin-top:5mm;border-top:3px double rgba(31,103,94,.22);border-bottom:1px solid var(--report-book-line);background:rgba(255,255,255,.28)}
+.report-sansha-heading{padding:3mm 4mm;display:flex;align-items:center;justify-content:space-between;gap:5mm;background:rgba(31,103,94,.07)}
+.report-sansha-heading>div{display:grid;gap:.5mm}.report-sansha-heading small{color:var(--report-muted);font-size:7.5pt;font-weight:750;letter-spacing:.08em}.report-sansha-heading strong{font-family:"Songti SC","STSong","Noto Serif SC",serif;font-size:12pt;color:var(--report-book-ink)}
+.report-sansha-heading>span,.report-sansha-item>span{padding:1mm 2.2mm;border-radius:999px;font-size:7.5pt;font-weight:850;white-space:nowrap}
+.report-sansha-heading>span{border:1px solid var(--report-line);color:var(--report-muted);background:var(--report-paper)}
+.report-sansha-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--report-line)}
+.report-sansha-item{min-width:0;padding:3mm 4mm;display:grid;grid-template-columns:1fr auto;gap:1.5mm 3mm;align-items:start}
+.report-sansha-item+.report-sansha-item{border-left:1px solid var(--report-line)}
+.report-sansha-item>div{display:grid;gap:.5mm}.report-sansha-item small{color:var(--report-muted);font-size:7.5pt}.report-sansha-item strong{font-size:8.5pt}.report-sansha-item>p{grid-column:1/-1;margin:0;color:var(--report-muted);font-size:7.5pt;line-height:1.45}
+.report-sansha-groups{grid-column:1/-1;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5mm!important}
+.report-sansha-groups>span{min-width:0;padding:1.5mm 2mm;background:rgba(31,103,94,.06);display:grid;gap:.4mm}
+.report-sansha-groups>span small{font-size:6.8pt}.report-sansha-groups>span b{font-size:7.5pt;overflow-wrap:anywhere}
+.report-sansha-groups>span.active{background:var(--report-red-soft);color:var(--report-red);box-shadow:inset 0 0 0 1px rgba(178,71,48,.14)}.report-sansha-groups>span.active small{color:inherit}
+.report-sansha-item.clear>span{background:var(--report-jade-soft);color:var(--report-jade)}.report-sansha-item.risk>span{background:var(--report-red-soft);color:var(--report-red)}.report-sansha-item.unknown>span{background:#e9ece9;color:#5d6c6d}
+.report-sansha-note{margin:0;padding:2mm 4mm;border-top:1px solid var(--report-line);color:var(--report-muted);font-size:7.5pt}
+
+@media screen and (max-width:600px){.report-sansha-list{grid-template-columns:1fr}.report-sansha-item+.report-sansha-item{border-top:1px solid var(--report-line);border-left:0}}
+@media print{.report-sansha-audit{margin-top:2.5mm;break-inside:avoid-page}.report-sansha-heading{padding:1.6mm 3mm}.report-sansha-heading strong{font-size:10pt}.report-sansha-list{grid-template-columns:repeat(2,minmax(0,1fr))}.report-sansha-item{padding:1.8mm 3mm;gap:.8mm 2mm}.report-sansha-groups{gap:.8mm!important}.report-sansha-groups>span{padding:.8mm 1.2mm;gap:.2mm}.report-sansha-groups>span small{font-size:6pt}.report-sansha-groups>span b{font-size:6.6pt}.report-sansha-item>p,.report-sansha-note{font-size:7pt}.report-sansha-note{padding:1.2mm 3mm}}
+
+/* Keep the cover, fixed house plate, and compact risk audit together on page one. */
+@media print{.report-house-grid{width:120mm;padding:2mm;gap:1.5mm}.report-house-cell{padding:1.6mm;gap:.6mm}.report-house-cell b{width:9mm;height:9mm;font-size:15pt}.report-note{margin-top:2mm;padding:1.4mm 2.5mm}.report-sansha-audit{margin-top:1.8mm}.report-sansha-heading{padding:1mm 2.5mm}.report-sansha-heading>div{display:flex;align-items:baseline;gap:2mm}.report-sansha-heading small{font-size:6.5pt}.report-sansha-heading strong{font-size:9pt}.report-sansha-heading>span,.report-sansha-item>span{padding:.7mm 1.8mm;font-size:6.8pt}.report-sansha-item{padding:1.1mm 2.5mm;gap:.4mm 1.5mm}.report-sansha-groups>span{padding:.55mm 1mm}.report-sansha-groups>span small{font-size:5.8pt}.report-sansha-groups>span b{font-size:6.2pt}.report-sansha-item small,.report-sansha-item>p,.report-sansha-note{font-size:6.5pt}.report-sansha-item strong{font-size:7.5pt}.report-sansha-note{padding:.8mm 2.5mm}}
